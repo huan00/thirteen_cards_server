@@ -56,6 +56,4 @@ class Deck {
   }
 }
 
-const deck = new Deck()
-
-export default deck
+export default Deck
