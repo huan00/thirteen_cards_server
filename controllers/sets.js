@@ -162,6 +162,7 @@ const fullHouse = (hand) => {
   return true
 }
 const flush = (hand) => {
+  if (hand.length < 5) return false
   const set = new Set()
   hand.forEach((card) => {
     set.add(card.suit)
@@ -253,12 +254,9 @@ const checkHighPair = (hand1, hand2) => {
     .sort((a, b) => b - a)
 
   for (let i = 0; i < set1.length; i++) {
-    // console.log(set1[i])
     if (set1[i] > set2[i]) {
       return 1
     } else if (set1[i] < set2[i]) {
-      console.log(set1[i])
-      console.log(set2[i])
       return 2
     }
   }
@@ -303,9 +301,9 @@ const checkHighCard = (hand1, hand2) => {
   const h2 = getCardValue(hand2)
 
   for (let i = 0; i < h1.length; i++) {
-    if (h1[i] > h2[i]) {
+    if (parseInt(h1[i]) > parseInt(h2[i])) {
       return 1
-    } else if (h1[i] < h2[i]) {
+    } else if (parseInt(h1[i]) < parseInt(h2[i])) {
       return 2
     }
   }
@@ -360,9 +358,12 @@ const handleTie = (hand1, hand2, rank) => {
   switch (rank) {
     case 8:
       return checkHighCard(hand1, hand2)
-    case (7, 6, 3):
+    case 7:
+    case 6:
+    case 3:
       return checkHighTri(hand1, hand2)
-    case (5, 4):
+    case 5:
+    case 4:
       return checkHighCard(hand1, hand2)
     case 2:
       return checkHighPair(hand1, hand2)
@@ -374,127 +375,225 @@ const handleTie = (hand1, hand2, rank) => {
 }
 
 export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
-  const scoreBoard = [{ score: 0 }, { score: 0 }]
-  const hands = [[...hand1], [...hand2]]
+  const scoreBoard = [
+    { [hand1.playerName]: { score: 0 } },
+    { [hand2.playerName]: { score: 0 } }
+  ]
+  // const scoreKeys = Object.keys(scoreBoard)
+  const hands = [hand1.hand, hand2.hand]
   if (hand3) {
-    scoreBoard.push({ score: 0 }), hands.push(hand3)
+    scoreBoard.push({ [hand3.playerName]: { score: 0 } }),
+      hands.push(hand3.hand)
   }
   if (hand4) {
-    scoreBoard.push({ score: 0 }), hands.push(hand4)
+    scoreBoard.push({ [hand4.playerName]: { score: 0 } }),
+      hands.push(hand4.hand)
   }
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < hands.length; i++) {
     const compareHand = hands[i]
-    for (let j = i + 1; j < 4; j++) {
+
+    for (let j = i + 1; j < hands.length; j++) {
       const compareTo = hands[j]
       for (let k = 0; k < 3; k++) {
         const h1 = handRank(compareHand[k])
         const h2 = handRank(compareTo[k])
 
         if (h1 > h2) {
-          scoreBoard[i].score++
-          scoreBoard[j].score--
+          scoreBoard[i][Object.keys(scoreBoard[i])].score++
+          scoreBoard[j][Object.keys(scoreBoard[j])].score--
         } else if (h1 < h2) {
-          scoreBoard[i].score--
-          scoreBoard[j].score++
+          scoreBoard[i][Object.keys(scoreBoard[i])].score--
+          scoreBoard[j][Object.keys(scoreBoard[j])].score++
         } else if (h1 === h2) {
           const tie = handleTie(compareHand[k], compareTo[k], h1)
           if (tie === 1) {
-            scoreBoard[i].score++
-            scoreBoard[j].score--
+            scoreBoard[i][Object.keys(scoreBoard[i])].score++
+            scoreBoard[j][Object.keys(scoreBoard[j])].score--
           } else if (tie === 2) {
-            scoreBoard[i].score--
-            scoreBoard[j].score++
+            scoreBoard[i][Object.keys(scoreBoard[i])].score--
+            scoreBoard[j][Object.keys(scoreBoard[j])].score++
           }
         }
       }
     }
   }
-
   return scoreBoard
 }
 
-const hand1 = [
-  [
-    { suit: 0, rank: 5 },
-    { suit: 1, rank: 10 },
-    { suit: 0, rank: 6 }
-  ],
-  [
-    { suit: 2, rank: 0 },
-    { suit: 2, rank: 4 },
-    { suit: 2, rank: 0 },
-    { suit: 0, rank: 12 },
-    { suit: 2, rank: 12 }
-  ],
-  [
-    { suit: 3, rank: 0 },
-    { suit: 3, rank: 1 },
-    { suit: 3, rank: 5 },
-    { suit: 3, rank: 4 },
-    { suit: 3, rank: 8 }
+const hand1 = {
+  playerName: 'one',
+  hand: [
+    [
+      {
+        suit: 0,
+        rank: 0
+      },
+      {
+        suit: 0,
+        rank: 11
+      },
+      {
+        suit: 1,
+        rank: 10
+      }
+    ],
+    [
+      {
+        suit: 0,
+        rank: 1
+      },
+      {
+        suit: 0,
+        rank: 7
+      },
+      {
+        suit: 3,
+        rank: 7
+      },
+      {
+        suit: 1,
+        rank: 9
+      },
+      {
+        suit: 3,
+        rank: 4
+      }
+    ],
+    [
+      {
+        suit: 2,
+        rank: 0
+      },
+      {
+        suit: 2,
+        rank: 3
+      },
+      {
+        suit: 2,
+        rank: 6
+      },
+      {
+        suit: 2,
+        rank: 11
+      },
+      {
+        suit: 2,
+        rank: 12
+      }
+    ]
   ]
-]
-const hand2 = [
-  [
-    { suit: 2, rank: 7 },
-    { suit: 2, rank: 11 },
-    { suit: 2, rank: 9 }
-  ],
-  [
-    { suit: 2, rank: 0 },
-    { suit: 3, rank: 12 },
-    { suit: 0, rank: 12 },
-    { suit: 0, rank: 0 },
-    { suit: 3, rank: 4 }
-  ],
-  [
-    { suit: 3, rank: 0 },
-    { suit: 0, rank: 0 },
-    { suit: 2, rank: 6 },
-    { suit: 3, rank: 10 },
-    { suit: 1, rank: 10 }
+}
+
+const hand2 = {
+  playerName: 'two',
+  hand: [
+    [
+      {
+        suit: 2,
+        rank: 8
+      },
+      {
+        suit: 2,
+        rank: 10
+      },
+      {
+        suit: 3,
+        rank: 11
+      }
+    ],
+    [
+      {
+        suit: 2,
+        rank: 1
+      },
+      {
+        suit: 3,
+        rank: 2
+      },
+      {
+        suit: 3,
+        rank: 5
+      },
+      {
+        suit: 2,
+        rank: 5
+      },
+      {
+        suit: 0,
+        rank: 3
+      }
+    ],
+    [
+      {
+        suit: 1,
+        rank: 0
+      },
+      {
+        suit: 1,
+        rank: 1
+      },
+      {
+        suit: 1,
+        rank: 3
+      },
+      {
+        suit: 1,
+        rank: 4
+      },
+      {
+        suit: 1,
+        rank: 7
+      }
+    ]
   ]
-]
-const hand3 = [
-  [
-    { suit: 2, rank: 8 },
-    { suit: 3, rank: 9 },
-    { suit: 0, rank: 11 }
-  ],
-  [
-    { suit: 3, rank: 0 },
-    { suit: 2, rank: 0 },
-    { suit: 2, rank: 5 },
-    { suit: 2, rank: 4 },
-    { suit: 3, rank: 1 }
-  ],
-  [
-    { suit: 1, rank: 7 },
-    { suit: 1, rank: 8 },
-    { suit: 1, rank: 9 },
-    { suit: 1, rank: 11 },
-    { suit: 1, rank: 12 }
+}
+const hand3 = {
+  playerName: 'three',
+  hand: [
+    [
+      { suit: 2, rank: 8 },
+      { suit: 3, rank: 9 },
+      { suit: 0, rank: 11 }
+    ],
+    [
+      { suit: 3, rank: 0 },
+      { suit: 2, rank: 0 },
+      { suit: 2, rank: 5 },
+      { suit: 2, rank: 4 },
+      { suit: 3, rank: 1 }
+    ],
+    [
+      { suit: 1, rank: 7 },
+      { suit: 1, rank: 8 },
+      { suit: 1, rank: 9 },
+      { suit: 1, rank: 11 },
+      { suit: 1, rank: 12 }
+    ]
   ]
-]
-const hand4 = [
-  [
-    { suit: 3, rank: 5 },
-    { suit: 0, rank: 6 },
-    { suit: 3, rank: 6 }
-  ],
-  [
-    { suit: 3, rank: 0 },
-    { suit: 1, rank: 0 },
-    { suit: 2, rank: 10 },
-    { suit: 0, rank: 9 },
-    { suit: 2, rank: 4 }
-  ],
-  [
-    { suit: 2, rank: 8 },
-    { suit: 1, rank: 9 },
-    { suit: 0, rank: 10 },
-    { suit: 3, rank: 11 },
-    { suit: 2, rank: 12 }
+}
+const hand4 = {
+  playerName: 'four',
+  hand: [
+    [
+      { suit: 3, rank: 5 },
+      { suit: 0, rank: 6 },
+      { suit: 3, rank: 6 }
+    ],
+    [
+      { suit: 3, rank: 0 },
+      { suit: 1, rank: 0 },
+      { suit: 2, rank: 10 },
+      { suit: 0, rank: 9 },
+      { suit: 2, rank: 4 }
+    ],
+    [
+      { suit: 2, rank: 8 },
+      { suit: 1, rank: 9 },
+      { suit: 0, rank: 10 },
+      { suit: 3, rank: 11 },
+      { suit: 2, rank: 12 }
+    ]
   ]
-]
+}
+// console.log(compareHands(hand1, hand2))

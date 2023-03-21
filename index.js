@@ -4,6 +4,12 @@ import * as http from 'http'
 import { Server } from 'socket.io'
 import Deck from './controllers/Deck.js'
 import { createId } from './utilities/index.js'
+import {
+  checkWinner,
+  compareHands,
+  convertHand,
+  Hand
+} from './controllers/sets.js'
 
 const PORT = process.env.PORT || 3001
 const app = express()
@@ -11,7 +17,7 @@ app.use(cors())
 const server = http.createServer(app)
 export const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:19006', 'http://localhost:19000'],
+    origin: ['http://localhost:19006', 'exp://192.168.4.27:19000', '*'],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'x-requested-with'],
     credentials: true
@@ -19,65 +25,128 @@ export const io = new Server(server, {
 })
 
 const clientRooms = {}
-let numPlayers = []
+const state = {}
+let playerNumber = 1
+const startCount = new Set()
+const submitCount = {}
+const submitHand = {}
 
-io.on('connection', (client) => {
-  // io.emit('clientId', client.id)
-
-  const handleNewGame = () => {
+io.on('connection', async (client) => {
+  const handleCreateRoom = () => {
     let roomId = createId()
+    clientRooms[client.id] = roomId
+    submitCount[roomId] = {}
+
+    client.join(roomId)
+
+    client.emit('createdRoom', { clientId: client.id, roomId: roomId })
+  }
+
+  const handleJoinRoom = async (roomId) => {
+    const roomSockets = await io.in(roomId).fetchSockets()
+
+    let currentRoomPlayer = roomSockets.length
+
+    if (currentRoomPlayer === 0) {
+      client.emit('unknowRoom')
+      return
+    } else if (currentRoomPlayer > 3) {
+      client.emit('tooManyPlayers')
+      return
+    }
 
     clientRooms[client.id] = roomId
 
-    numPlayers.push(client.id)
-    // client.emit('roomId', roomId)
-    client.emit('playerNumber', { room: roomId, player: client.id })
     client.join(roomId)
+    client.number = playerNumber
+    playerNumber += 1
+
+    client.emit('clientId', client.id)
+    client.emit('roomId', roomId)
   }
 
-  const handleJoinGame = async (roomId) => {
-    //check to see how many player in room
-    const roomExist = io.in(roomId).adapter.rooms.has(roomId)
-    const players = io.in(roomId).adapter.rooms.get(roomId)
+  const handleDealHand = async (roomId) => {
+    //get number of players in room
+    const roomSockets = await io.in(roomId).fetchSockets()
+    const clientNumber = roomSockets.length
 
-    if (!roomExist && (players?.size === undefined || players.size > 4)) {
-      //return if room doesn't exist or room have more than 4 players
+    //count how many player click start
+    startCount.add(client.id)
+    //return message to tell player to wait
+    if (clientNumber !== startCount.size) {
+      client.emit('waitingOnPlayer')
       return
-    } else {
-      //join game
-      client.join(roomId)
-      numPlayers.push(client.id)
-      client.emit('playerNumber', { room: roomId, player: client.id })
-      io.sockets.in(roomId).emit('connectToRoom', `${client.id} join the game`)
     }
-  }
 
-  const handleDealHand = (id) => {
-    //create new deck and shuffle it then deal 4 hands
+    //emit ready to all player
+    io.to(roomId).to(client.id).emit('ready')
+
+    //create and shuffle deck
     const deck = new Deck()
+    deck.shuffle()
+    deck.shuffle()
     deck.shuffle()
     const hands = deck.deal_hand()
 
-    //get num player in room and send hand to them.
-    const players = io.in(id)
-    const list = players.adapter.rooms.get(id)
-    const playerList = Array?.from(list)
-
     //loop player list and send hand to player
-    playerList.forEach((player, index) => {
-      io.emit(player, hands[index])
+    Array.from(startCount).forEach((clientId, index) => {
+      io.emit(clientId, hands[index])
     })
+    //restart count
+    startCount.clear()
   }
 
-  client.on('room', handleNewGame)
-  client.on('joinGame', handleJoinGame)
-  client.on('getHand', handleDealHand)
+  const handleSubmitHand = async (data) => {
+    const roomSockets = await io.in(data.roomId).fetchSockets()
+    // console.log(roomSockets)
+    const clientNumber = roomSockets.length
+    const count = submitCount[data.roomId]
+    count[client.id] = { hand: data.hand, playerName: data.playerName }
+
+    const playerKeys = Object.keys(count)
+    const hands = playerKeys.map((hand) => count[hand])
+    console.log(hands)
+
+    //If not all user submit hand. tell user to wait.
+    if (Object.keys(count).length !== clientNumber) {
+      client.emit('waiting')
+      return
+    }
+
+    const scores = compareHands(...hands)
+    for (let i = 0; i < scores.length; i++) {
+      for (let j = 0; j < scores.length; j++) {
+        if (Object.keys(scores[i])[0] === hands[j].playerName) {
+          hands[j]['score'] = scores[i][Object.keys(scores[i])[0]].score
+        }
+      }
+    }
+    // hands[0]['score'] = 3
+    hands.sort((a, b) => a.playerName - b.playerName)
+
+    io.to(data.roomId).emit('showHand', count)
+
+    // console.log(submitCount[data.roomId])
+    //collect all hands submitted
+    // convert hand
+    // const topSet = convertHand(data.hand[0])
+    // const midSet = convertHand(data.hand[1])
+    // const bottomSet = convertHand(data.hand[2])
+    // submitHand[client.id] = [[...topSet], [...midSet], [...bottomSet]]
+
+    // console.log(checkWinner(midSet, bottomSet))
+    // console.log(data.hand)
+
+    submitCount[data.roomId] = {}
+  }
+
+  client.on('createRoom', handleCreateRoom)
+  client.on('joinRoom', handleJoinRoom)
+  client.on('startGame', handleDealHand)
   client.on('getNumPlayer', async (roomId) => {
     const player = io.in(roomId)
-    console.log(player.adapter.rooms.size)
   })
-  // const numPlayer = io.sockets.adapter.rooms.get('room1')
-  // console.log(numPlayer.size)
+  client.on('submitHand', handleSubmitHand)
 })
 server.listen(PORT, () => {
   console.log(`Connection listening on port ${PORT}`)
