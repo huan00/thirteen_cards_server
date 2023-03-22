@@ -4,12 +4,7 @@ import * as http from 'http'
 import { Server } from 'socket.io'
 import Deck from './controllers/Deck.js'
 import { createId } from './utilities/index.js'
-import {
-  checkWinner,
-  compareHands,
-  convertHand,
-  Hand
-} from './controllers/sets.js'
+import { compareHands } from './controllers/sets.js'
 
 const PORT = process.env.PORT || 3001
 const app = express()
@@ -24,17 +19,33 @@ export const io = new Server(server, {
   }
 })
 
-const clientRooms = {}
-const state = {}
-let playerNumber = 1
+// const clientRooms = {}
+
+// let playerNumber = 1
 const startCount = new Set()
 const submitCount = {}
-const submitHand = {}
+const roomState = {}
+// {:  players: { name: '', clientId: '', score } }
 
 io.on('connection', async (client) => {
-  const handleCreateRoom = () => {
+  // client.on('disconnecting', (reason)=> {
+
+  // })
+
+  const handleCreateRoom = (data) => {
     let roomId = createId()
-    clientRooms[client.id] = roomId
+    // clientRooms[client.id] = roomId
+    roomState[roomId] = {
+      player: {
+        [client.id]: {
+          name: data.playerName,
+          totalScore: 0,
+          clientId: client.id
+        }
+      },
+      submitCount: {}
+    }
+
     submitCount[roomId] = {}
 
     client.join(roomId)
@@ -42,8 +53,8 @@ io.on('connection', async (client) => {
     client.emit('createdRoom', { clientId: client.id, roomId: roomId })
   }
 
-  const handleJoinRoom = async (roomId) => {
-    const roomSockets = await io.in(roomId).fetchSockets()
+  const handleJoinRoom = async (data) => {
+    const roomSockets = await io.in(data.roomId).fetchSockets()
 
     let currentRoomPlayer = roomSockets.length
 
@@ -55,14 +66,18 @@ io.on('connection', async (client) => {
       return
     }
 
-    clientRooms[client.id] = roomId
+    // clientRooms[client.id] = roomId
+    roomState[data.roomId]['player'][client.id] = {
+      name: data.playerName,
+      totalScore: 0
+    }
 
-    client.join(roomId)
-    client.number = playerNumber
-    playerNumber += 1
+    client.join(data.roomId)
+    // client.number = playerNumber
+    // playerNumber += 1
 
     client.emit('clientId', client.id)
-    client.emit('roomId', roomId)
+    client.emit('roomId', data.roomId)
   }
 
   const handleDealHand = async (roomId) => {
@@ -98,46 +113,66 @@ io.on('connection', async (client) => {
 
   const handleSubmitHand = async (data) => {
     const roomSockets = await io.in(data.roomId).fetchSockets()
-    // console.log(roomSockets)
     const clientNumber = roomSockets.length
     const count = submitCount[data.roomId]
-    count[client.id] = { hand: data.hand, playerName: data.playerName }
 
-    const playerKeys = Object.keys(count)
-    const hands = playerKeys.map((hand) => count[hand])
-    console.log(hands)
+    roomState[data.roomId]['submitCount'][client.id] = true
+
+    roomState[data.roomId]['player'][client.id]['hand'] = [...data.hand]
+
+    count[client.id] = {
+      hand: data.hand,
+      playerName: data.playerName,
+      clientId: client.id
+    }
+
+    const playerKeys = Object.keys(roomState[data.roomId]['player'])
+    console.log(Object.keys(roomState[data.roomId]['submitCount']).length)
+
+    // console.log(roomState[data.roomId]['player'][someKeys[0].hand])
+
+    // const playerKeys = Object.keys(count)
 
     //If not all user submit hand. tell user to wait.
-    if (Object.keys(count).length !== clientNumber) {
+    if (
+      Object.keys(roomState[data.roomId]['submitCount']).length !== clientNumber
+    ) {
       client.emit('waiting')
       return
     }
 
+    const hands = playerKeys.map((key) => ({
+      hand: roomState[data.roomId]['player'][key].hand,
+      playerName: key
+    }))
+    // console.log(...hands)
+
     const scores = compareHands(...hands)
+    console.log(scores)
+
     for (let i = 0; i < scores.length; i++) {
       for (let j = 0; j < scores.length; j++) {
-        if (Object.keys(scores[i])[0] === hands[j].playerName) {
-          hands[j]['score'] = scores[i][Object.keys(scores[i])[0]].score
+        if (
+          Object.keys(scores[i])[0] ===
+          Object.keys(roomState[data.roomId]['player'])[j]
+        ) {
+          roomState[data.roomId]['player'][
+            Object.keys(roomState[data.roomId]['player'])[j]
+          ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
+          roomState[data.roomId]['player'][
+            Object.keys(roomState[data.roomId]['player'])[j]
+          ].totalScore += scores[i][Object.keys(scores[i])[0]].score
         }
       }
     }
-    // hands[0]['score'] = 3
-    hands.sort((a, b) => a.playerName - b.playerName)
 
-    io.to(data.roomId).emit('showHand', count)
+    // console.log(scoreBoard[data.roomId])
 
-    // console.log(submitCount[data.roomId])
-    //collect all hands submitted
-    // convert hand
-    // const topSet = convertHand(data.hand[0])
-    // const midSet = convertHand(data.hand[1])
-    // const bottomSet = convertHand(data.hand[2])
-    // submitHand[client.id] = [[...topSet], [...midSet], [...bottomSet]]
+    console.log(roomState[data.roomId])
 
-    // console.log(checkWinner(midSet, bottomSet))
-    // console.log(data.hand)
+    io.to(data.roomId).emit('showHand', roomState[data.roomId])
 
-    submitCount[data.roomId] = {}
+    roomState[data.roomId]['submitCount'] = {}
   }
 
   client.on('createRoom', handleCreateRoom)

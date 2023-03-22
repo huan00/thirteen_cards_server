@@ -390,15 +390,18 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
       hands.push(hand4.hand)
   }
 
+  // console.log(hand1)
+
   for (let i = 0; i < hands.length; i++) {
     const compareHand = hands[i]
 
     for (let j = i + 1; j < hands.length; j++) {
       const compareTo = hands[j]
+      // console.log(compareHand)
+      // console.log(compareTo)
       for (let k = 0; k < 3; k++) {
         const h1 = handRank(compareHand[k])
         const h2 = handRank(compareTo[k])
-
         if (h1 > h2) {
           scoreBoard[i][Object.keys(scoreBoard[i])].score++
           scoreBoard[j][Object.keys(scoreBoard[j])].score--
@@ -596,4 +599,6 @@ const hand4 = {
     ]
   ]
 }
-// console.log(compareHands(hand1, hand2))
+// const all = [hand1, hand2, hand3, hand4]
+// console.log(all)
+// console.log(compareHands(...all))
