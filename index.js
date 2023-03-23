@@ -108,12 +108,34 @@ io.on('connection', async (client) => {
     const clientNumber = roomSockets.length
     // const count = submitCount[data.roomId]
 
-    console.log(data.roomId)
     roomState[data.roomId]['submitCount'][client.id] = true
-
     roomState[data.roomId]['player'][client.id]['hand'] = [...data.hand]
 
+    //get player keys from the room
     const playerKeys = Object.keys(roomState[data.roomId]['player'])
+
+    //check if the hand submitted is qualify or not
+    // subtract point from disqualify player
+    const hands = playerKeys.forEach((key) => {
+      const hand = roomState[data.roomId]['player'][key].hand
+      if (checkQualify(hand)) {
+        return {
+          hand: hand,
+          playerName: key
+        }
+      } else {
+        const disqualify = key
+        roomState[data.roomId]['player'][disqualify].currentScore -= 9
+        roomState[data.roomId]['player'][disqualify].TotalScore -= 9
+
+        playerKeys.forEach((playerKey) => {
+          if (playerKey !== disqualify) {
+            roomState[data.roomId]['player'][playerKey].currentScore += 3
+            roomState[data.roomId]['player'][playerKey].TotalScore += 3
+          }
+        })
+      }
+    })
 
     //If not all user submit hand. tell user to wait.
     if (
@@ -123,25 +145,23 @@ io.on('connection', async (client) => {
       return
     }
 
-    const hands = playerKeys.map((key) => ({
-      hand: roomState[data.roomId]['player'][key].hand,
-      playerName: key
-    }))
+    //if more than 2 players qualify then compare hand
+    if (hands.length > 1) {
+      const scores = compareHands(...hands)
 
-    const scores = compareHands(...hands)
-
-    for (let i = 0; i < scores.length; i++) {
-      for (let j = 0; j < scores.length; j++) {
-        if (
-          Object.keys(scores[i])[0] ===
-          Object.keys(roomState[data.roomId]['player'])[j]
-        ) {
-          roomState[data.roomId]['player'][
+      for (let i = 0; i < scores.length; i++) {
+        for (let j = 0; j < scores.length; j++) {
+          if (
+            Object.keys(scores[i])[0] ===
             Object.keys(roomState[data.roomId]['player'])[j]
-          ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
-          roomState[data.roomId]['player'][
-            Object.keys(roomState[data.roomId]['player'])[j]
-          ].totalScore += scores[i][Object.keys(scores[i])[0]].score
+          ) {
+            roomState[data.roomId]['player'][
+              Object.keys(roomState[data.roomId]['player'])[j]
+            ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
+            roomState[data.roomId]['player'][
+              Object.keys(roomState[data.roomId]['player'])[j]
+            ].totalScore += scores[i][Object.keys(scores[i])[0]].score
+          }
         }
       }
     }
