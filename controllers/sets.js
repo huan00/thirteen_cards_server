@@ -9,11 +9,12 @@ export const checkQualify = (hand) => {
     return false
   } else if (top === mid) {
     const tie = handleTie(hand[0], hand[1], mid)
-    console.log(tie)
     if (tie === 1) return false
   }
   //check bottom is greater than mid
   if (mid > bottom) {
+    // console.log(mid)
+    // console.log(bottom)
     return false
   } else if (mid === bottom) {
     const tie = handleTie(hand[1], hand[2], bottom)
@@ -98,7 +99,7 @@ const dragon = (hand) => {
   return true
 }
 
-const checkAuto = (hand) => {
+export const checkAuto = (hand) => {
   if (threeStraight(hand)) return true
   if (threeFlush(hand)) return true
   if (sixPair(hand)) return true
@@ -149,12 +150,15 @@ const flush = (hand) => {
 }
 const straight = (hand) => {
   const cards = cardLayout(hand)
-  const firstCard = Object.keys(cards[0])
-  const lastCard = Object.keys(cards[cards.length - 1])
+  const keys = cards.map((card) => parseInt(Object.keys(card)[0]))
 
   if (hand.length === 5) {
-    if (cards.length !== 5) return false
-    if (lastCard - firstCard === 4) return true
+    if (keys.length !== 5) return false
+    if (keys[0] === 0 && keys[4] === 12) {
+      keys.splice(0, 1)
+      keys.splice(keys.length, 0, 13)
+    }
+    if (keys[4] - keys[0] === 4) return true
     return false
   }
 }
@@ -262,12 +266,12 @@ const checkHighPair = (hand1, hand2) => {
 }
 
 const checkHighTri = (hand1, hand2) => {
-  const h1 = cardLayout(hand1).filter((card) => Object.values(card) > 2)
-  const h2 = cardLayout(hand2).filter((card) => Object.values(card) > 2)
+  const h1 = cardLayout(hand1).filter((card) => Object.values(card) > 2)[0]
+  const h2 = cardLayout(hand2).filter((card) => Object.values(card) > 2)[0]
 
-  if (h1[Object.keys(h1) > h2[Object.keys(h2)]]) {
+  if (parseInt(Object.keys(h1)[0]) > parseInt(Object.keys(h2)[0])) {
     return 1
-  } else if (h1[Object.keys(h1) < h2[Object.keys(h2)]]) {
+  } else if (parseInt(Object.keys(h1)[0]) < parseInt(Object.keys(h2)[0])) {
     return 2
   }
 }
@@ -330,7 +334,6 @@ const handRank = (hand) => {
 }
 
 const handleTie = (hand1, hand2, rank) => {
-  // console.log()
   switch (rank) {
     case 8:
       return checkHighCard(hand1, hand2)
@@ -401,6 +404,7 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
       for (let k = 0; k < 3; k++) {
         const h1 = handRank(compareHand[k])
         const h2 = handRank(compareTo[k])
+
         const score = scoreSystem(Math.max(h1, h2), k)
         if (h1 > h2) {
           scoreBoard[i][Object.keys(scoreBoard[i])].score += score
@@ -410,6 +414,7 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
           scoreBoard[j][Object.keys(scoreBoard[j])].score += score
         } else if (h1 === h2) {
           const tie = handleTie(compareHand[k], compareTo[k], h1)
+
           if (tie === 1) {
             scoreBoard[i][Object.keys(scoreBoard[i])].score += score
             scoreBoard[j][Object.keys(scoreBoard[j])].score -= score
@@ -430,11 +435,11 @@ const hand1 = {
     [
       {
         suit: 0,
-        rank: 11
+        rank: 1
       },
       {
         suit: 0,
-        rank: 11
+        rank: 2
       },
       {
         suit: 1,
@@ -448,41 +453,41 @@ const hand1 = {
       },
       {
         suit: 0,
-        rank: 7
+        rank: 2
       },
       {
         suit: 3,
-        rank: 7
+        rank: 3
       },
+      {
+        suit: 1,
+        rank: 4
+      },
+      {
+        suit: 3,
+        rank: 5
+      }
+    ],
+    [
       {
         suit: 1,
         rank: 9
       },
       {
-        suit: 3,
-        rank: 9
-      }
-    ],
-    [
+        suit: 2,
+        rank: 10
+      },
+      {
+        suit: 2,
+        rank: 11
+      },
+      {
+        suit: 2,
+        rank: 12
+      },
       {
         suit: 2,
         rank: 8
-      },
-      {
-        suit: 2,
-        rank: 6
-      },
-      {
-        suit: 2,
-        rank: 6
-      },
-      {
-        suit: 2,
-        rank: 12
-      },
-      {
-        suit: 2,
-        rank: 12
       }
     ]
   ]
@@ -555,23 +560,23 @@ const hand3 = {
   playerName: 'three',
   hand: [
     [
-      { suit: 2, rank: 8 },
-      { suit: 2, rank: 9 },
-      { suit: 2, rank: 11 }
-    ],
-    [
-      { suit: 3, rank: 0 },
-      { suit: 3, rank: 0 },
-      { suit: 3, rank: 5 },
-      { suit: 3, rank: 4 },
-      { suit: 3, rank: 1 }
-    ],
-    [
-      { suit: 0, rank: 7 },
-      { suit: 0, rank: 8 },
-      { suit: 0, rank: 9 },
-      { suit: 0, rank: 11 },
+      { suit: 0, rank: 0 },
+      { suit: 0, rank: 4 },
       { suit: 0, rank: 12 }
+    ],
+    [
+      { suit: 2, rank: 0 },
+      { suit: 2, rank: 7 },
+      { suit: 2, rank: 2 },
+      { suit: 2, rank: 8 },
+      { suit: 2, rank: 9 }
+    ],
+    [
+      { suit: 1, rank: 1 },
+      { suit: 2, rank: 1 },
+      { suit: 2, rank: 6 },
+      { suit: 0, rank: 6 },
+      { suit: 1, rank: 6 }
     ]
   ]
 }
@@ -579,29 +584,29 @@ const hand4 = {
   playerName: 'four',
   hand: [
     [
-      { suit: 3, rank: 0 },
-      { suit: 0, rank: 1 },
-      { suit: 3, rank: 2 }
+      { suit: 0, rank: 5 },
+      { suit: 3, rank: 9 },
+      { suit: 0, rank: 8 }
     ],
     [
-      { suit: 3, rank: 3 },
-      { suit: 1, rank: 4 },
-      { suit: 2, rank: 5 },
-      { suit: 0, rank: 6 },
-      { suit: 2, rank: 7 }
-    ],
-    [
-      { suit: 2, rank: 8 },
-      { suit: 1, rank: 9 },
-      { suit: 0, rank: 10 },
-      { suit: 3, rank: 11 },
+      { suit: 3, rank: 1 },
+      { suit: 2, rank: 3 },
+      { suit: 0, rank: 7 },
+      { suit: 3, rank: 12 },
       { suit: 2, rank: 12 }
+    ],
+    [
+      { suit: 2, rank: 10 },
+      { suit: 3, rank: 10 },
+      { suit: 0, rank: 11 },
+      { suit: 3, rank: 11 },
+      { suit: 1, rank: 11 }
     ]
   ]
 }
 // const all = [hand1, hand2, hand3, hand4]
 // console.log(all)
-// console.log(compareHands(...all))
+console.log(compareHands(hand3, hand4))
 // console.log(checkQualify(hand1.hand))
 
 // console.log(Object.values(cardLayout(hand1.hand[0])[0]))
