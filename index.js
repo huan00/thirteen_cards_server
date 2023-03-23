@@ -4,7 +4,7 @@ import * as http from 'http'
 import { Server } from 'socket.io'
 import Deck from './controllers/Deck.js'
 import { createId } from './utilities/index.js'
-import { compareHands } from './controllers/sets.js'
+import { compareHands, checkQualify, checkAuto } from './controllers/sets.js'
 
 const PORT = process.env.PORT || 3001
 const app = express()
@@ -19,13 +19,7 @@ export const io = new Server(server, {
   }
 })
 
-// const clientRooms = {}
-
-// let playerNumber = 1
-const startCount = new Set()
-const submitCount = {}
 const roomState = {}
-// {:  players: { name: '', clientId: '', score } }
 
 io.on('connection', async (client) => {
   // client.on('disconnecting', (reason)=> {
@@ -34,19 +28,17 @@ io.on('connection', async (client) => {
 
   const handleCreateRoom = (data) => {
     let roomId = createId()
-    // clientRooms[client.id] = roomId
     roomState[roomId] = {
       player: {
         [client.id]: {
           name: data.playerName,
           totalScore: 0,
-          clientId: client.id
+          clientId: client.id,
+          currentScore: 0
         }
       },
       submitCount: {}
     }
-
-    submitCount[roomId] = {}
 
     client.join(roomId)
 
@@ -66,35 +58,39 @@ io.on('connection', async (client) => {
       return
     }
 
-    // clientRooms[client.id] = roomId
     roomState[data.roomId]['player'][client.id] = {
       name: data.playerName,
-      totalScore: 0
+      totalScore: 0,
+      currentScore: 0,
+      clientId: client.id
     }
 
     client.join(data.roomId)
-    // client.number = playerNumber
-    // playerNumber += 1
 
     client.emit('clientId', client.id)
     client.emit('roomId', data.roomId)
   }
 
-  const handleDealHand = async (roomId) => {
+  const handleDealHand = async (data) => {
     //get number of players in room
-    const roomSockets = await io.in(roomId).fetchSockets()
+    const roomSockets = await io.in(data.roomId).fetchSockets()
     const clientNumber = roomSockets.length
+    roomState[data.roomId]['submitCount'][client.id] = true
+
+    //if room doesn't have 2 or more player return
+    if (clientNumber < 2) return
 
     //count how many player click start
-    startCount.add(client.id)
     //return message to tell player to wait
-    if (clientNumber !== startCount.size) {
+    if (
+      clientNumber !== Object.keys(roomState[data.roomId]['submitCount']).length
+    ) {
       client.emit('waitingOnPlayer')
       return
     }
 
     //emit ready to all player
-    io.to(roomId).to(client.id).emit('ready')
+    io.to(data.roomId).to(client.id).emit('ready')
 
     //create and shuffle deck
     const deck = new Deck()
@@ -104,34 +100,25 @@ io.on('connection', async (client) => {
     const hands = deck.deal_hand()
 
     //loop player list and send hand to player
-    Array.from(startCount).forEach((clientId, index) => {
+    Object.keys(roomState[data.roomId]['player']).forEach((clientId, index) => {
       io.emit(clientId, hands[index])
     })
     //restart count
-    startCount.clear()
+    roomState[data.roomId]['submitCount'] = {}
   }
 
   const handleSubmitHand = async (data) => {
     const roomSockets = await io.in(data.roomId).fetchSockets()
     const clientNumber = roomSockets.length
-    const count = submitCount[data.roomId]
+    // const count = submitCount[data.roomId]
 
     roomState[data.roomId]['submitCount'][client.id] = true
-
     roomState[data.roomId]['player'][client.id]['hand'] = [...data.hand]
 
-    count[client.id] = {
-      hand: data.hand,
-      playerName: data.playerName,
-      clientId: client.id
-    }
-
+    //get player keys from the room
     const playerKeys = Object.keys(roomState[data.roomId]['player'])
-    console.log(Object.keys(roomState[data.roomId]['submitCount']).length)
 
-    // console.log(roomState[data.roomId]['player'][someKeys[0].hand])
-
-    // const playerKeys = Object.keys(count)
+    //check for auto win
 
     //If not all user submit hand. tell user to wait.
     if (
@@ -141,37 +128,87 @@ io.on('connection', async (client) => {
       return
     }
 
-    const hands = playerKeys.map((key) => ({
-      hand: roomState[data.roomId]['player'][key].hand,
-      playerName: key
-    }))
-    // console.log(...hands)
+    //check if the hand submitted is qualify or not
+    // subtract point from disqualify player
+    //check for autoWin and add score to player
+    const hands = []
+    playerKeys.forEach((key) => {
+      const hand = roomState[data.roomId]['player'][key].hand
 
-    const scores = compareHands(...hands)
-    console.log(scores)
+      if (checkQualify(hand)) {
+        if (checkAuto(hand)) {
+          console.log('autoWin')
+          const winnerKey = key
+          const points = (playerKeys.length - 1) * 5
 
-    for (let i = 0; i < scores.length; i++) {
-      for (let j = 0; j < scores.length; j++) {
-        if (
-          Object.keys(scores[i])[0] ===
-          Object.keys(roomState[data.roomId]['player'])[j]
-        ) {
-          roomState[data.roomId]['player'][
+          roomState[data.roomId]['player'][winnerKey].currentScore += points
+          roomState[data.roomId]['player'][winnerKey].totalScore += points
+
+          playerKeys.forEach((playerKey) => {
+            if (playerKey !== winnerKey) {
+              roomState[data.roomId]['player'][playerKey].currentScore -= 5
+              roomState[data.roomId]['player'][playerKey].totalScore -= 5
+            }
+          })
+        } else {
+          console.log('qualify')
+          hands.push({
+            hand: hand,
+            playerName: key
+          })
+        }
+      } else {
+        const disqualify = key
+        console.log(
+          roomState[data.roomId]['player'][disqualify].name + ' not Qualify'
+        )
+        const points = (playerKeys.length - 1) * 3
+        roomState[data.roomId]['player'][disqualify].currentScore -= points
+        roomState[data.roomId]['player'][disqualify].totalScore -= points
+
+        playerKeys.forEach((playerKey) => {
+          if (playerKey !== disqualify) {
+            roomState[data.roomId]['player'][playerKey].currentScore += 3
+            roomState[data.roomId]['player'][playerKey].totalScore += 3
+          }
+        })
+      }
+    })
+
+    //if more than 2 players qualify then compare hand
+    console.log(hands)
+    console.log(hands.length > 1)
+    if (hands && hands.length > 1) {
+      console.log('point check')
+      const scores = compareHands(...hands)
+
+      for (let i = 0; i < scores.length; i++) {
+        for (let j = 0; j < scores.length; j++) {
+          if (
+            Object.keys(scores[i])[0] ===
             Object.keys(roomState[data.roomId]['player'])[j]
-          ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
-          roomState[data.roomId]['player'][
-            Object.keys(roomState[data.roomId]['player'])[j]
-          ].totalScore += scores[i][Object.keys(scores[i])[0]].score
+          ) {
+            roomState[data.roomId]['player'][
+              Object.keys(roomState[data.roomId]['player'])[j]
+            ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
+            roomState[data.roomId]['player'][
+              Object.keys(roomState[data.roomId]['player'])[j]
+            ].totalScore += scores[i][Object.keys(scores[i])[0]].score
+          }
         }
       }
     }
-
-    // console.log(scoreBoard[data.roomId])
 
     console.log(roomState[data.roomId])
 
     io.to(data.roomId).emit('showHand', roomState[data.roomId])
 
+    //reset currentScore for players
+    playerKeys.forEach(
+      (key) => (roomState[data.roomId]['player'][key].currentScore = 0)
+    )
+
+    hands.splice(0, hands.length)
     roomState[data.roomId]['submitCount'] = {}
   }
 
