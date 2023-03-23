@@ -136,8 +136,8 @@ io.on('connection', async (client) => {
       const hand = roomState[data.roomId]['player'][key].hand
 
       if (checkQualify(hand)) {
+        //Check for auto win
         if (checkAuto(hand)) {
-          console.log('autoWin')
           const winnerKey = key
           const points = (playerKeys.length - 1) * 5
 
@@ -151,7 +151,6 @@ io.on('connection', async (client) => {
             }
           })
         } else {
-          console.log('qualify')
           hands.push({
             hand: hand,
             playerName: key
@@ -159,9 +158,6 @@ io.on('connection', async (client) => {
         }
       } else {
         const disqualify = key
-        console.log(
-          roomState[data.roomId]['player'][disqualify].name + ' not Qualify'
-        )
         const points = (playerKeys.length - 1) * 3
         roomState[data.roomId]['player'][disqualify].currentScore -= points
         roomState[data.roomId]['player'][disqualify].totalScore -= points
@@ -176,10 +172,7 @@ io.on('connection', async (client) => {
     })
 
     //if more than 2 players qualify then compare hand
-    console.log(hands)
-    console.log(hands.length > 1)
     if (hands && hands.length > 1) {
-      console.log('point check')
       const scores = compareHands(...hands)
 
       for (let i = 0; i < scores.length; i++) {
@@ -198,8 +191,6 @@ io.on('connection', async (client) => {
         }
       }
     }
-
-    console.log(roomState[data.roomId])
 
     io.to(data.roomId).emit('showHand', roomState[data.roomId])
 
