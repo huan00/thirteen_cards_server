@@ -42,7 +42,11 @@ io.on('connection', async (client) => {
 
     client.join(roomId)
 
-    client.emit('createdRoom', { clientId: client.id, roomId: roomId })
+    client.emit('createdRoom', {
+      clientId: client.id,
+      roomId: roomId,
+      playerName: data.playerName
+    })
   }
 
   const handleJoinRoom = async (data) => {
@@ -69,6 +73,14 @@ io.on('connection', async (client) => {
 
     client.emit('clientId', client.id)
     client.emit('roomId', data.roomId)
+    const room = await io.in(data.roomId).fetchSockets()
+    const playersInRoom = room.length
+
+    io.to(data.roomId).emit('playerJoin', {
+      playerName: data.playerName,
+      playersInRoom
+    })
+    // console.log(currentRoomPlayer)
   }
 
   const handleDealHand = async (data) => {
@@ -101,7 +113,11 @@ io.on('connection', async (client) => {
 
     //loop player list and send hand to player
     Object.keys(roomState[data.roomId]['player']).forEach((clientId, index) => {
-      io.emit(clientId, hands[index])
+      io.emit(clientId, {
+        hand: hands[index],
+        roomStats: roomState[data.roomId],
+        playersInRoom: clientNumber
+      })
     })
     //restart count
     roomState[data.roomId]['submitCount'] = {}
@@ -203,12 +219,31 @@ io.on('connection', async (client) => {
     roomState[data.roomId]['submitCount'] = {}
   }
 
+  const handleLeaveRoom = async (data) => {
+    client.leave(data.roomId)
+    const room = await io.in(data.roomId).fetchSockets()
+    const playersInRoom = room.length
+    io.to(data.roomId).emit('playerLeft', {
+      playerName: data.playerName,
+      playersInRoom
+    })
+
+    client.on('playStillQualify', handlePlayQualify)
+  }
+
+  const handlePlayQualify = async (data) => {
+    const roomSockets = await io.in(data.roomId).fetchSockets()
+    const clientNumber = roomSockets.length
+
+    if (clientNumber > 1) return
+
+    io.to(data.roomId).emit('unqualify')
+  }
+
   client.on('createRoom', handleCreateRoom)
   client.on('joinRoom', handleJoinRoom)
   client.on('startGame', handleDealHand)
-  client.on('getNumPlayer', async (roomId) => {
-    const player = io.in(roomId)
-  })
+  client.on('leaveRoom', handleLeaveRoom)
   client.on('submitHand', handleSubmitHand)
 })
 server.listen(PORT, () => {
