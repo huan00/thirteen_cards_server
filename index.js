@@ -69,6 +69,14 @@ io.on('connection', async (client) => {
 
     client.emit('clientId', client.id)
     client.emit('roomId', data.roomId)
+    const room = await io.in(data.roomId).fetchSockets()
+    const playersInRoom = room.length
+    console.log(playersInRoom)
+    io.to(data.roomId).emit('playerJoin', {
+      playerName: data.playerName,
+      playersInRoom
+    })
+    // console.log(currentRoomPlayer)
   }
 
   const handleDealHand = async (data) => {
@@ -203,12 +211,20 @@ io.on('connection', async (client) => {
     roomState[data.roomId]['submitCount'] = {}
   }
 
+  const handleLeaveRoom = async (data) => {
+    client.leave(data.roomId)
+    const room = await io.in(data.roomId).fetchSockets()
+    const playersInRoom = room.length
+    io.to(data.roomId).emit('playerLeft', {
+      playerName: data.playerName,
+      playersInRoom
+    })
+  }
+
   client.on('createRoom', handleCreateRoom)
   client.on('joinRoom', handleJoinRoom)
   client.on('startGame', handleDealHand)
-  client.on('getNumPlayer', async (roomId) => {
-    const player = io.in(roomId)
-  })
+  client.on('leaveRoom', handleLeaveRoom)
   client.on('submitHand', handleSubmitHand)
 })
 server.listen(PORT, () => {
