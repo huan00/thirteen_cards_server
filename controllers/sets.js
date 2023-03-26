@@ -266,15 +266,41 @@ const checkHighPair = (hand1, hand2) => {
 }
 
 const checkHighTri = (hand1, hand2) => {
-  const h1 = cardLayout(hand1).filter((card) => Object.values(card) > 2)[0]
-  const h2 = cardLayout(hand2).filter((card) => Object.values(card) > 2)[0]
+  const h1 =
+    parseInt(
+      Object.keys(
+        cardLayout(hand1).filter((card) => Object.values(card) > 2)[0]
+      )[0]
+    ) === 0
+      ? 13
+      : parseInt(
+          Object.keys(
+            cardLayout(hand1).filter((card) => Object.values(card) > 2)[0]
+          )[0]
+        )
+  const h2 =
+    parseInt(
+      Object.keys(
+        cardLayout(hand2).filter((card) => Object.values(card) > 2)[0]
+      )[0]
+    ) === 0
+      ? 13
+      : parseInt(
+          Object.keys(
+            cardLayout(hand2).filter((card) => Object.values(card) > 2)[0]
+          )[0]
+        ) === 0
 
-  if (parseInt(Object.keys(h1)[0]) > parseInt(Object.keys(h2)[0])) {
+  console.log(h1)
+  console.log(h2)
+
+  if (h1 > h2) {
     return 1
-  } else if (parseInt(Object.keys(h1)[0]) < parseInt(Object.keys(h2)[0])) {
+  } else if (h1 < h2) {
     return 2
   }
 }
+
 const checkHighCard = (hand1, hand2) => {
   const h1 = getCardValue(hand1)
   const h2 = getCardValue(hand2)
@@ -453,41 +479,41 @@ const hand1 = {
       },
       {
         suit: 0,
+        rank: 1
+      },
+      {
+        suit: 3,
+        rank: 1
+      },
+      {
+        suit: 1,
         rank: 2
       },
       {
         suit: 3,
-        rank: 3
-      },
-      {
-        suit: 1,
-        rank: 4
-      },
-      {
-        suit: 3,
-        rank: 5
+        rank: 2
       }
     ],
     [
       {
         suit: 1,
-        rank: 9
+        rank: 0
       },
       {
         suit: 2,
-        rank: 10
+        rank: 0
       },
       {
         suit: 2,
-        rank: 11
+        rank: 0
       },
       {
         suit: 2,
-        rank: 12
+        rank: 4
       },
       {
         suit: 2,
-        rank: 8
+        rank: 4
       }
     ]
   ]
@@ -621,3 +647,4 @@ const hand4 = {
 // console.log(dragon(hand4.hand))
 
 // console.log(cardLayout(hand1.hand.flat()))
+checkHighTri(hand1.hand[1], hand1.hand[2])
