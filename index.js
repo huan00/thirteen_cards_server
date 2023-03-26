@@ -12,8 +12,8 @@ app.use(cors())
 const server = http.createServer(app)
 export const io = new Server(server, {
   cors: {
-    // origin: ['http://localhost:19006', 'exp://192.168.4.27:19000', '*'],
-    origin: ['*'],
+    origin: ['http://localhost:19006', 'exp://192.168.4.27:19000', '*'],
+    // origin: ['*'],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'x-requested-with'],
     credentials: true
