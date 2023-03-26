@@ -38,7 +38,8 @@ io.on('connection', async (client) => {
           currentScore: 0
         }
       },
-      submitCount: {}
+      submitCount: {},
+      playing: false
     }
 
     client.join(roomId)
@@ -57,6 +58,9 @@ io.on('connection', async (client) => {
 
     if (currentRoomPlayer === 0) {
       client.emit('unknowRoom')
+      return
+    } else if (roomState[data.roomId]['playing']) {
+      client.emit('gameOnPlay')
       return
     } else if (currentRoomPlayer > 3) {
       client.emit('tooManyPlayers')
@@ -122,6 +126,7 @@ io.on('connection', async (client) => {
     })
     //restart count
     roomState[data.roomId]['submitCount'] = {}
+    roomState[data.roomId]['playing'] = true
   }
 
   const handleSubmitHand = async (data) => {
@@ -190,17 +195,26 @@ io.on('connection', async (client) => {
 
     //if more than 2 players qualify then compare hand
     if (hands && hands.length > 1) {
+      console.log(hands.length)
       const scores = compareHands(...hands)
+      console.log(scores)
 
       for (let i = 0; i < scores.length; i++) {
-        for (let j = 0; j < scores.length; j++) {
+        for (
+          let j = 0;
+          j < Object.keys(roomState[data.roomId]['player']).length;
+          j++
+        ) {
           if (
             Object.keys(scores[i])[0] ===
             Object.keys(roomState[data.roomId]['player'])[j]
           ) {
+            //current score
             roomState[data.roomId]['player'][
               Object.keys(roomState[data.roomId]['player'])[j]
-            ]['currentScore'] = scores[i][Object.keys(scores[i])[0]].score
+            ]['currentScore'] += scores[i][Object.keys(scores[i])[0]].score
+
+            //total score
             roomState[data.roomId]['player'][
               Object.keys(roomState[data.roomId]['player'])[j]
             ].totalScore += scores[i][Object.keys(scores[i])[0]].score
@@ -218,6 +232,7 @@ io.on('connection', async (client) => {
 
     hands.splice(0, hands.length)
     roomState[data.roomId]['submitCount'] = {}
+    roomState[data.roomId]['playing'] = false
   }
 
   const handleLeaveRoom = async (data) => {

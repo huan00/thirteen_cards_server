@@ -291,9 +291,6 @@ const checkHighTri = (hand1, hand2) => {
           )[0]
         ) === 0
 
-  console.log(h1)
-  console.log(h2)
-
   if (h1 > h2) {
     return 1
   } else if (h1 < h2) {
