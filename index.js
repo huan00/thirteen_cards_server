@@ -103,6 +103,9 @@ io.on('connection', async (client) => {
       clientNumber !== Object.keys(roomState[data.roomId]['submitCount']).length
     ) {
       client.emit('waitingOnPlayer')
+      io.to(data.roomId).emit('playerClickStart', {
+        playerName: roomState[data.roomId]['player'][client.id].name
+      })
       return
     }
 
@@ -130,6 +133,10 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
+    if (!roomState[data.roomId]) {
+      client.emit('roomClosed')
+      return
+    }
     const roomSockets = await io.in(data.roomId).fetchSockets()
     const clientNumber = roomSockets.length
     // const count = submitCount[data.roomId]
@@ -147,6 +154,9 @@ io.on('connection', async (client) => {
       Object.keys(roomState[data.roomId]['submitCount']).length !== clientNumber
     ) {
       client.emit('waiting')
+      io.to(data.roomId).emit('playerSubmitHand', {
+        playerName: data.playerName
+      })
       return
     }
 
