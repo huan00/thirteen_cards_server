@@ -23,9 +23,12 @@ export const io = new Server(server, {
 const roomState = {}
 
 io.on('connection', async (client) => {
-  // client.on('disconnecting', (reason)=> {
-
-  // })
+  client.on('disconnecting', (reason) => {
+    const [, room] = client.rooms
+    const playerName = roomState[room]['player'][client.id].name
+    io.to(room).emit('playerLeft', { playerName })
+    io.to(room).emit('leaveRoom', { playerName })
+  })
 
   const handleCreateRoom = (data) => {
     let roomId = createId()
@@ -35,7 +38,8 @@ io.on('connection', async (client) => {
           name: data.playerName,
           totalScore: 0,
           clientId: client.id,
-          currentScore: 0
+          currentScore: 0,
+          autoWin: false
         }
       },
       submitCount: {},
@@ -71,7 +75,8 @@ io.on('connection', async (client) => {
       name: data.playerName,
       totalScore: 0,
       currentScore: 0,
-      clientId: client.id
+      clientId: client.id,
+      autoWin: false
     }
 
     client.join(data.roomId)
@@ -175,6 +180,7 @@ io.on('connection', async (client) => {
 
           roomState[data.roomId]['player'][winnerKey].currentScore += points
           roomState[data.roomId]['player'][winnerKey].totalScore += points
+          roomState[data.roomId]['player'][winnerKey].autoWin = true
 
           playerKeys.forEach((playerKey) => {
             if (playerKey !== winnerKey) {
@@ -236,9 +242,10 @@ io.on('connection', async (client) => {
     io.to(data.roomId).emit('showHand', roomState[data.roomId])
 
     //reset currentScore for players
-    playerKeys.forEach(
-      (key) => (roomState[data.roomId]['player'][key].currentScore = 0)
-    )
+    playerKeys.forEach((key) => {
+      roomState[data.roomId]['player'][key].currentScore = 0
+      roomState[data.roomId]['player'][key].autoWin = false
+    })
 
     hands.splice(0, hands.length)
     roomState[data.roomId]['submitCount'] = {}

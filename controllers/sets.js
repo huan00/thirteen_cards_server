@@ -620,7 +620,7 @@ const hand4 = {
 // const all = [hand1, hand2, hand3, hand4]
 // console.log(all)
 // console.log(compareHands(hand3, hand4))
-console.log(checkQualify(hand4.hand))
+// console.log(checkQualify(hand4.hand))
 
 // console.log(Object.values(cardLayout(hand1.hand[0])[0]))
 
