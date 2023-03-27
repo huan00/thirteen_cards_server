@@ -12,14 +12,10 @@ export const checkQualify = (hand) => {
     if (tie === 1) return false
   }
   //check bottom is greater than mid
-  if (mid < bottom) {
-    // console.log(mid)
-    // console.log(bottom)
+  if (mid > bottom) {
     return false
   } else if (mid === bottom) {
     const tie = handleTie(hand[1], hand[2], bottom)
-    // console.log(bottom)
-    // console.log(tie)
     if (tie === 1) return false
   }
 
@@ -314,12 +310,6 @@ const checkHighCard = (hand1, hand2) => {
   return 0
 }
 
-const sortHand = (hand) => {
-  const sorted = hand.sort((a, b) => b.rank - a.rank)
-
-  return sorted
-}
-
 const cardLayout = (hand) => {
   let result = new Array(13).fill().map((_, index) => ({ [index]: 0 }))
 
@@ -343,8 +333,6 @@ const getCardValue = (hand) => {
     .flat()
     .sort((a, b) => b - a)
 }
-
-const getCardKey = (hand) => {}
 
 const handRank = (hand) => {
   if (straightFlush(hand)) return 8
@@ -609,30 +597,30 @@ const hand4 = {
   playerName: 'four',
   hand: [
     [
-      { suit: 0, rank: 5 },
-      { suit: 3, rank: 9 },
-      { suit: 0, rank: 8 }
-    ],
-    [
-      { suit: 3, rank: 1 },
-      { suit: 2, rank: 3 },
-      { suit: 0, rank: 7 },
-      { suit: 3, rank: 12 },
-      { suit: 2, rank: 12 }
-    ],
-    [
+      { suit: 1, rank: 9 },
       { suit: 2, rank: 10 },
-      { suit: 3, rank: 10 },
-      { suit: 0, rank: 11 },
-      { suit: 3, rank: 11 },
-      { suit: 1, rank: 11 }
+      { suit: 3, rank: 12 }
+    ],
+    [
+      { suit: 2, rank: 1 },
+      { suit: 3, rank: 3 },
+      { suit: 2, rank: 8 },
+      { suit: 3, rank: 8 },
+      { suit: 2, rank: 5 }
+    ],
+    [
+      { suit: 1, rank: 1 },
+      { suit: 1, rank: 2 },
+      { suit: 1, rank: 3 },
+      { suit: 1, rank: 4 },
+      { suit: 1, rank: 5 }
     ]
   ]
 }
 // const all = [hand1, hand2, hand3, hand4]
 // console.log(all)
 // console.log(compareHands(hand3, hand4))
-console.log(checkQualify(hand1.hand))
+console.log(checkQualify(hand4.hand))
 
 // console.log(Object.values(cardLayout(hand1.hand[0])[0]))
 
