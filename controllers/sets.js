@@ -12,12 +12,14 @@ export const checkQualify = (hand) => {
     if (tie === 1) return false
   }
   //check bottom is greater than mid
-  if (mid > bottom) {
+  if (mid < bottom) {
     // console.log(mid)
     // console.log(bottom)
     return false
   } else if (mid === bottom) {
     const tie = handleTie(hand[1], hand[2], bottom)
+    // console.log(bottom)
+    // console.log(tie)
     if (tie === 1) return false
   }
 
@@ -289,7 +291,7 @@ const checkHighTri = (hand1, hand2) => {
           Object.keys(
             cardLayout(hand2).filter((card) => Object.values(card) > 2)[0]
           )[0]
-        ) === 0
+        )
 
   if (h1 > h2) {
     return 1
@@ -484,33 +486,33 @@ const hand1 = {
       },
       {
         suit: 1,
-        rank: 2
+        rank: 9
       },
       {
         suit: 3,
-        rank: 2
+        rank: 4
       }
     ],
     [
       {
         suit: 1,
-        rank: 0
+        rank: 9
       },
       {
         suit: 2,
-        rank: 0
+        rank: 9
       },
       {
         suit: 2,
-        rank: 0
+        rank: 9
       },
       {
         suit: 2,
-        rank: 4
+        rank: 10
       },
       {
         suit: 2,
-        rank: 4
+        rank: 7
       }
     ]
   ]
@@ -630,7 +632,7 @@ const hand4 = {
 // const all = [hand1, hand2, hand3, hand4]
 // console.log(all)
 // console.log(compareHands(hand3, hand4))
-// console.log(checkQualify(hand1.hand))
+console.log(checkQualify(hand1.hand))
 
 // console.log(Object.values(cardLayout(hand1.hand[0])[0]))
 
@@ -644,4 +646,4 @@ const hand4 = {
 // console.log(dragon(hand4.hand))
 
 // console.log(cardLayout(hand1.hand.flat()))
-checkHighTri(hand1.hand[1], hand1.hand[2])
+// checkHighTri(hand1.hand[1], hand1.hand[2])
