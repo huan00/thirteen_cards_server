@@ -25,11 +25,13 @@ const roomState = {}
 io.on('connection', async (client) => {
   client.on('disconnecting', (reason) => {
     const [, room] = client.rooms
-    const playerName = roomState[room]
-      ? roomState[room]['player'][client.id].name
-      : ''
-    io.to(room).emit('playerLeft', { playerName })
-    io.to(room).emit('leaveRoom', { playerName })
+    client.leave(room)
+    if (!roomState[room]) return
+
+    delete roomState[room]['player'][client.id]
+    if (roomState[room]) {
+      io.to(room).emit('playerLeft', { roomState: roomState[room]['player'] })
+    }
   })
 
   const handleCreateRoom = (data) => {
@@ -181,6 +183,11 @@ io.on('connection', async (client) => {
       })
       return
     }
+
+    //reset Start Game
+    playerKeys.forEach((key) => {
+      roomState[data.roomId]['player'][key].startGame = false
+    })
 
     //check if the hand submitted is qualify or not
     // subtract point from disqualify player
