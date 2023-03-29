@@ -139,8 +139,8 @@ io.on('connection', async (client) => {
 
     //set start game back to false
     playerKeys.forEach((clientId) => {
-      roomState[data.roomId]['player'][key].currentScore = 0
-      roomState[data.roomId]['player'][key].autoWin = false
+      roomState[data.roomId]['player'][clientId].currentScore = 0
+      roomState[data.roomId]['player'][clientId].autoWin = false
       roomState[data.roomId]['player'][clientId].startGame = false
     })
 
