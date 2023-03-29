@@ -442,6 +442,69 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
   return scoreBoard
 }
 
+export const checkUserHand = (keys, roomState) => {
+  const hands = []
+  const roomStateUpdate = { ...roomState }
+  keys.forEach((key) => {
+    const hand = roomStateUpdate[key].hand
+
+    if (checkQualify(hand)) {
+      if (checkAuto(hand)) {
+        const winnerKey = key
+        const points = (keys.length - 1) * 5
+
+        roomStateUpdate[winnerKey].currentScore += points
+        roomStateUpdate[winnerKey].totalScore += points
+        roomStateUpdate[winnerKey].autoWin = true
+
+        keys.forEach((playerKey) => {
+          if (playerKey !== winnerKey) {
+            roomStateUpdate[playerKey].currentScore -= 5
+            roomStateUpdate[playerKey].totalScore -= 5
+          }
+        })
+      } else {
+        hands.push({
+          hand: hand,
+          playerName: key
+        })
+      }
+    } else {
+      const disqualify = key
+      const points = (keys.length - 1) * 3
+      roomStateUpdate[disqualify].currentScore -= points
+      roomStateUpdate[disqualify].totalScore -= points
+
+      keys.forEach((playerKey) => {
+        if (playerKey !== disqualify) {
+          roomStateUpdate[playerKey].currentScore += 3
+          roomStateUpdate[playerKey].totalScore += 3
+        }
+      })
+    }
+  })
+  return [hands, roomStateUpdate]
+}
+
+export const assignScore = (scores, roomState) => {
+  const roomStateUpdate = { ...roomState }
+  for (let i = 0; i < scores.length; i++) {
+    for (let j = 0; j < Object.keys(roomStateUpdate).length; j++) {
+      if (Object.keys(scores[i])[0] === Object.keys(roomStateUpdate)[j]) {
+        //current score
+        roomStateUpdate[Object.keys(roomStateUpdate)[j]]['currentScore'] +=
+          scores[i][Object.keys(scores[i])[0]].score
+
+        //total score
+        roomStateUpdate[Object.keys(roomStateUpdate)[j]].totalScore +=
+          scores[i][Object.keys(scores[i])[0]].score
+      }
+    }
+  }
+
+  return roomStateUpdate
+}
+
 const hand1 = {
   playerName: 'one',
   hand: [
