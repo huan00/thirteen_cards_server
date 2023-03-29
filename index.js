@@ -138,10 +138,11 @@ io.on('connection', async (client) => {
     const playerKeys = Object.keys(roomState[data.roomId]['player'])
 
     //set start game back to false
-    playerKeys.forEach(
-      (clientId) =>
-        (roomState[data.roomId]['player'][clientId].startGame = false)
-    )
+    playerKeys.forEach((clientId) => {
+      roomState[data.roomId]['player'][key].currentScore = 0
+      roomState[data.roomId]['player'][key].autoWin = false
+      roomState[data.roomId]['player'][clientId].startGame = false
+    })
 
     //loop player list and send hand to player
     playerKeys.forEach((clientId, index) => {
@@ -265,8 +266,6 @@ io.on('connection', async (client) => {
 
     //reset currentScore for players
     playerKeys.forEach((key) => {
-      roomState[data.roomId]['player'][key].currentScore = 0
-      roomState[data.roomId]['player'][key].autoWin = false
       roomState[data.roomId]['player'][key].startGame = false
     })
 
