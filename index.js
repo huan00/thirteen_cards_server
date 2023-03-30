@@ -35,7 +35,10 @@ io.on('connection', async (client) => {
 
     delete roomState[room]['player'][client.id]
     if (roomState[room]) {
-      io.to(room).emit('playerLeft', { roomState: roomState[room]['player'] })
+      io.to(room).emit('playerLeft', {
+        roomState: roomState[room]['player'],
+        playerName: roomState[room]['player'][client.id].name
+      })
     }
   })
 
