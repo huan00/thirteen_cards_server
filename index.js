@@ -28,6 +28,7 @@ const roomState = {}
 
 io.on('connection', async (client) => {
   client.on('disconnecting', (reason) => {
+    console.log('disconnect from server')
     const [, room] = client.rooms
     client.leave(room)
     if (!roomState[room]) return
