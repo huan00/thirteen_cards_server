@@ -29,15 +29,16 @@ const roomState = {}
 io.on('connection', async (client) => {
   client.on('disconnecting', (reason) => {
     console.log('disconnect from server')
+    console.log(reason)
     const [, room] = client.rooms
     client.leave(room)
     if (!roomState[room]) return
-
+    const name = roomState[room]['player'][client.id].name
     delete roomState[room]['player'][client.id]
     if (roomState[room]) {
       io.to(room).emit('playerLeft', {
         roomState: roomState[room]['player'],
-        playerName: roomState[room]['player'][client.id].name
+        playerName: name
       })
     }
   })
@@ -111,7 +112,6 @@ io.on('connection', async (client) => {
   }
 
   const handleDealHand = async (data) => {
-    console.log(data)
     if (!roomState[data.roomId]) {
       client.emit('roomClosed')
       return
@@ -152,6 +152,7 @@ io.on('connection', async (client) => {
 
     //set start game back to false
     playerKeys.forEach((clientId) => {
+      roomState[data.roomId]['player'][clientId]['hand'] = []
       roomState[data.roomId]['player'][clientId].currentScore = 0
       roomState[data.roomId]['player'][clientId].autoWin = false
       roomState[data.roomId]['player'][clientId].startGame = false
@@ -170,7 +171,6 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
-    console.log(data)
     if (!data.hand) return
     try {
       if (!roomState[data.roomId]) {
@@ -178,7 +178,6 @@ io.on('connection', async (client) => {
         return
       }
       if (!roomState[data.roomId]['player'][client.id]) return
-      console.log(roomState[data.roomId]['player'][client.id])
       const roomSockets = await io.in(data.roomId).fetchSockets()
       const clientNumber = roomSockets.length
 
