@@ -165,6 +165,7 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
+    console.log(data)
     if (!data.hand) return
     try {
       if (!roomState[data.roomId]) {
