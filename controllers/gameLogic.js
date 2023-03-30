@@ -518,13 +518,13 @@ const hand1 = {
         rank: 2
       },
       {
-        suit: 1,
+        suit: 0,
         rank: 11
       }
     ],
     [
       {
-        suit: 0,
+        suit: 1,
         rank: 1
       },
       {
@@ -649,9 +649,9 @@ const hand3 = {
     ],
     [
       { suit: 1, rank: 1 },
-      { suit: 2, rank: 1 },
-      { suit: 2, rank: 6 },
-      { suit: 0, rank: 6 },
+      { suit: 1, rank: 1 },
+      { suit: 1, rank: 6 },
+      { suit: 1, rank: 6 },
       { suit: 1, rank: 6 }
     ]
   ]
@@ -698,3 +698,19 @@ const hand4 = {
 
 // console.log(cardLayout(hand1.hand.flat()))
 // checkHighTri(hand1.hand[1], hand1.hand[2])
+
+// export const testHand = [
+//   { rank: 0, suit: 1 },
+//   { rank: 1, suit: 1 },
+//   { rank: 2, suit: 1 },
+//   { rank: 2, suit: 2 },
+//   { rank: 5, suit: 2 },
+//   { rank: 4, suit: 2 },
+//   { rank: 6, suit: 2 },
+//   { rank: 7, suit: 2 },
+//   { rank: 8, suit: 3 },
+//   { rank: 9, suit: 3 },
+//   { rank: 10, suit: 3 },
+//   { rank: 11, suit: 3 },
+//   { rank: 12, suit: 3 }
+// ]

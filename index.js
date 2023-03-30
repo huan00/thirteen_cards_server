@@ -6,8 +6,6 @@ import Deck from './controllers/Deck.js'
 import { createId } from './utilities/index.js'
 import {
   compareHands,
-  checkQualify,
-  checkAuto,
   checkUserHand,
   assignScore
 } from './controllers/gameLogic.js'
@@ -201,6 +199,7 @@ io.on('connection', async (client) => {
     //check if the hand submitted is qualify or not
     // subtract point from disqualify player
     //check for autoWin and add score to player
+
     const [hands, roomStateUpdate] = checkUserHand(
       playerKeys,
       roomState[data.roomId]['player']
@@ -212,32 +211,8 @@ io.on('connection', async (client) => {
     //if more than 2 players qualify then compare hand
     if (hands && hands.length > 1) {
       const scores = compareHands(...hands)
-
       const updatedScore = assignScore(scores, roomState[data.roomId]['player'])
       roomState[data.roomId].player = { ...updatedScore }
-
-      // for (let i = 0; i < scores.length; i++) {
-      //   for (
-      //     let j = 0;
-      //     j < Object.keys(roomState[data.roomId]['player']).length;
-      //     j++
-      //   ) {
-      //     if (
-      //       Object.keys(scores[i])[0] ===
-      //       Object.keys(roomState[data.roomId]['player'])[j]
-      //     ) {
-      //       //current score
-      //       roomState[data.roomId]['player'][
-      //         Object.keys(roomState[data.roomId]['player'])[j]
-      //       ]['currentScore'] += scores[i][Object.keys(scores[i])[0]].score
-
-      //       //total score
-      //       roomState[data.roomId]['player'][
-      //         Object.keys(roomState[data.roomId]['player'])[j]
-      //       ].totalScore += scores[i][Object.keys(scores[i])[0]].score
-      //     }
-      //   }
-      // }
     }
 
     io.to(data.roomId).emit('showHand', roomState[data.roomId])
