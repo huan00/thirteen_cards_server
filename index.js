@@ -28,12 +28,12 @@ const roomState = {}
 
 io.on('connection', async (client) => {
   client.on('disconnecting', (reason) => {
-    console.log('disconnect from server')
     console.log(reason)
     const [, room] = client.rooms
     client.leave(room)
     if (!roomState[room]) return
     const name = roomState[room]['player'][client.id].name
+    console.log('disconnect from server')
     delete roomState[room]['player'][client.id]
     if (roomState[room]) {
       io.to(room).emit('playerLeft', {
