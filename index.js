@@ -173,6 +173,8 @@ io.on('connection', async (client) => {
         client.emit('roomClosed')
         return
       }
+      if (!roomState[data.roomId]['player'][client.id]) return
+      console.log(roomState[data.roomId]['player'][client.id])
       const roomSockets = await io.in(data.roomId).fetchSockets()
       const clientNumber = roomSockets.length
 
