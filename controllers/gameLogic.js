@@ -474,6 +474,7 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
     }
   }
   const result = gongChecker(scoreBoard)
+  console.log(result)
   return result
 }
 
@@ -536,7 +537,7 @@ export const assignScore = (scores, roomState) => {
       }
     }
   }
-
+  console.log(roomStateUpdate)
   return roomStateUpdate
 }
 
