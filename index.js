@@ -165,68 +165,76 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
-    if (!roomState[data.roomId]) {
-      client.emit('roomClosed')
-      return
-    }
-    const roomSockets = await io.in(data.roomId).fetchSockets()
-    const clientNumber = roomSockets.length
+    try {
+      if (!roomState[data.roomId]) {
+        client.emit('roomClosed')
+        return
+      }
+      const roomSockets = await io.in(data.roomId).fetchSockets()
+      const clientNumber = roomSockets.length
 
-    //user submit ready for hand.
-    roomState[data.roomId]['submitCount'][client.id] = true
-    roomState[data.roomId]['player'][client.id]['hand'] = [...data.hand]
-    roomState[data.roomId]['player'][client.id]['startGame'] = true
+      //user submit ready for hand.
+      roomState[data.roomId]['submitCount'][client.id] = true
+      roomState[data.roomId]['player'][client.id]['hand'] = [...data.hand]
+      roomState[data.roomId]['player'][client.id]['startGame'] = true
 
-    //get player keys from the room
-    const playerKeys = Object.keys(roomState[data.roomId]['player'])
+      //get player keys from the room
+      const playerKeys = Object.keys(roomState[data.roomId]['player'])
 
-    //check for auto win
+      //check for auto win
 
-    //If not all user submit hand. tell user to wait.
-    if (
-      Object.keys(roomState[data.roomId]['submitCount']).length !== clientNumber
-    ) {
-      client.emit('waiting')
-      io.to(data.roomId).emit('playerSubmitHand', {
-        roomState: roomState[data.roomId]['player']
+      //If not all user submit hand. tell user to wait.
+      if (
+        Object.keys(roomState[data.roomId]['submitCount']).length !==
+        clientNumber
+      ) {
+        client.emit('waiting')
+        io.to(data.roomId).emit('playerSubmitHand', {
+          roomState: roomState[data.roomId]['player']
+        })
+        return
+      }
+
+      //reset Start Game
+      playerKeys.forEach((key) => {
+        roomState[data.roomId]['player'][key].startGame = false
       })
-      return
+
+      //check if the hand submitted is qualify or not
+      // subtract point from disqualify player
+      //check for autoWin and add score to player
+
+      const [hands, roomStateUpdate] = checkUserHand(
+        playerKeys,
+        roomState[data.roomId]['player']
+      )
+
+      //update roomstate with new stats
+      roomState[data.roomId].player = { ...roomStateUpdate }
+
+      //if more than 2 players qualify then compare hand
+      if (hands && hands.length > 1) {
+        const scores = compareHands(...hands)
+        const updatedScore = assignScore(
+          scores,
+          roomState[data.roomId]['player']
+        )
+        roomState[data.roomId].player = { ...updatedScore }
+      }
+
+      io.to(data.roomId).emit('showHand', roomState[data.roomId])
+
+      //reset currentScore for players
+      playerKeys.forEach((key) => {
+        roomState[data.roomId]['player'][key].startGame = false
+      })
+
+      hands.splice(0, hands.length)
+      roomState[data.roomId]['submitCount'] = {}
+      roomState[data.roomId]['playing'] = false
+    } catch (error) {
+      console.log(error)
     }
-
-    //reset Start Game
-    playerKeys.forEach((key) => {
-      roomState[data.roomId]['player'][key].startGame = false
-    })
-
-    //check if the hand submitted is qualify or not
-    // subtract point from disqualify player
-    //check for autoWin and add score to player
-
-    const [hands, roomStateUpdate] = checkUserHand(
-      playerKeys,
-      roomState[data.roomId]['player']
-    )
-
-    //update roomstate with new stats
-    roomState[data.roomId].player = { ...roomStateUpdate }
-
-    //if more than 2 players qualify then compare hand
-    if (hands && hands.length > 1) {
-      const scores = compareHands(...hands)
-      const updatedScore = assignScore(scores, roomState[data.roomId]['player'])
-      roomState[data.roomId].player = { ...updatedScore }
-    }
-
-    io.to(data.roomId).emit('showHand', roomState[data.roomId])
-
-    //reset currentScore for players
-    playerKeys.forEach((key) => {
-      roomState[data.roomId]['player'][key].startGame = false
-    })
-
-    hands.splice(0, hands.length)
-    roomState[data.roomId]['submitCount'] = {}
-    roomState[data.roomId]['playing'] = false
   }
 
   const handleLeaveRoom = async (data) => {
