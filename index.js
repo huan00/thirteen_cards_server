@@ -48,7 +48,8 @@ io.on('connection', async (client) => {
           clientId: client.id,
           currentScore: 0,
           autoWin: false,
-          startGame: false
+          startGame: false,
+          hand: []
         }
       },
       submitCount: {},
@@ -62,6 +63,7 @@ io.on('connection', async (client) => {
       roomId: roomId,
       playerName: data.playerName
     })
+    checkIO(roomId)
   }
 
   const handleJoinRoom = async (data) => {
@@ -87,7 +89,8 @@ io.on('connection', async (client) => {
       currentScore: 0,
       clientId: client.id,
       autoWin: false,
-      startGame: false
+      startGame: false,
+      hand: []
     }
 
     client.join(data.roomId)
@@ -115,11 +118,11 @@ io.on('connection', async (client) => {
 
     //user submit to start game
     roomState[data.roomId]['submitCount'][client.id] = true
+    roomState[data.roomId]['player'][client.id]['startGame'] = true
 
     //if room doesn't have 2 or more player return
     if (clientNumber < 2) return
 
-    roomState[data.roomId]['player'][client.id].startGame = true
     //count how many player click start
     //return message to tell player to wait
     if (
@@ -241,12 +244,14 @@ io.on('connection', async (client) => {
   }
 
   const handlePlayQualify = async (data) => {
-    const roomSockets = await io.in(data.roomId).fetchSockets()
-    const clientNumber = roomSockets.length
-
-    if (clientNumber > 1) return
-
-    io.to(data.roomId).emit('unqualify')
+    try {
+      const roomSockets = await io.in(data.roomId).fetchSockets()
+      const clientNumber = roomSockets.length
+      if (clientNumber > 1) return
+      io.to(data.roomId).emit('unqualify')
+    } catch (error) {
+      console.log('handle play qualify error')
+    }
   }
 
   client.on('createRoom', handleCreateRoom)
@@ -255,6 +260,7 @@ io.on('connection', async (client) => {
   client.on('leaveRoom', handleLeaveRoom)
   client.on('submitHand', handleSubmitHand)
 })
+
 server.listen(PORT, () => {
   console.log(`Connection listening on port ${PORT}`)
 })
