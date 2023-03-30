@@ -63,7 +63,6 @@ io.on('connection', async (client) => {
       roomId: roomId,
       playerName: data.playerName
     })
-    checkIO(roomId)
   }
 
   const handleJoinRoom = async (data) => {
