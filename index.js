@@ -165,6 +165,7 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
+    if (!data.hand) return
     try {
       if (!roomState[data.roomId]) {
         client.emit('roomClosed')
