@@ -37,7 +37,7 @@ io.on('connection', async (client) => {
     delete roomState[room]['player'][client.id]
     if (roomState[room]) {
       io.to(room).emit('playerLeft', {
-        roomState: roomState[room],
+        roomState: roomState[data.roomId]['player'],
         playerName: name
       })
     }
@@ -252,7 +252,7 @@ io.on('connection', async (client) => {
     io.to(data.roomId).emit('playerLeft', {
       playerName: data.playerName,
       playersInRoom,
-      roomState: roomState[data.roomId]
+      roomState: roomState[data.roomId]['player']
     })
 
     client.on('playStillQualify', handlePlayQualify)
