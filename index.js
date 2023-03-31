@@ -54,7 +54,8 @@ io.on('connection', async (client) => {
           currentScore: 0,
           autoWin: false,
           startGame: false,
-          hand: []
+          hand: [],
+          gong: false
         }
       },
       submitCount: {},
@@ -94,7 +95,8 @@ io.on('connection', async (client) => {
       clientId: client.id,
       autoWin: false,
       startGame: false,
-      hand: []
+      hand: [],
+      gong: false
     }
 
     client.join(data.roomId)
@@ -153,6 +155,7 @@ io.on('connection', async (client) => {
     //set start game back to false
     playerKeys.forEach((clientId) => {
       roomState[data.roomId]['player'][clientId]['hand'] = []
+      roomState[data.roomId]['player'][clientId]['gong'] = false
       roomState[data.roomId]['player'][clientId].currentScore = 0
       roomState[data.roomId]['player'][clientId].autoWin = false
       roomState[data.roomId]['player'][clientId].startGame = false
