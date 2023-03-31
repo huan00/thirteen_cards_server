@@ -252,6 +252,7 @@ io.on('connection', async (client) => {
     client.leave(data.roomId)
     const room = await io.in(data.roomId).fetchSockets()
     const playersInRoom = room.length
+    delete roomState[data.roomId]['player'][client.id]
     io.to(data.roomId).emit('playerLeft', {
       playerName: data.playerName,
       playersInRoom,
