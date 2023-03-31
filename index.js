@@ -298,9 +298,14 @@ io.on('connection', async (client) => {
     }
   }
 
+  const handleResetGame = (data) => {
+    roomState[data.roomId]['playing'] = false
+  }
+
   client.on('createRoom', handleCreateRoom)
   client.on('joinRoom', handleJoinRoom)
   client.on('startGame', handleDealHand)
+  client.on('resetGame', handleResetGame)
   client.on('leaveRoom', handleLeaveRoom)
   client.on('submitHand', handleSubmitHand)
 })
