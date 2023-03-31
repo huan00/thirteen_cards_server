@@ -28,12 +28,11 @@ const roomState = {}
 
 io.on('connection', async (client) => {
   client.on('disconnecting', (reason) => {
-    console.log(reason)
     const [, room] = client.rooms
     client.leave(room)
     if (!roomState[room]) return
     const name = roomState[room]['player'][client.id].name
-    console.log('disconnect from server')
+    console.log(`${name} disconnect from server`)
     delete roomState[room]['player'][client.id]
     if (roomState[room]) {
       io.to(room).emit('playerLeft', {
@@ -121,6 +120,7 @@ io.on('connection', async (client) => {
     //get number of players in room
     const roomSockets = await io.in(data.roomId).fetchSockets()
     const clientNumber = roomSockets.length
+    const playerKeys = Object.keys(roomState[data.roomId]['player'])
 
     //user submit to start game
     roomState[data.roomId]['submitCount'][client.id] = true
@@ -131,15 +131,34 @@ io.on('connection', async (client) => {
 
     //count how many player click start
     //return message to tell player to wait
-    if (
-      clientNumber !== Object.keys(roomState[data.roomId]['submitCount']).length
-    ) {
-      client.emit('waitingOnPlayer')
-      io.to(data.roomId).emit('playerClickStart', {
-        roomState: roomState[data.roomId]['player']
-      })
-      return
+
+    for (let i = 0; i < playerKeys.length; i++) {
+      if (!roomState[data.roomId]['player'][playerKeys[i]].startGame) {
+        client.emit('waitingOnPlayer')
+        io.to(data.roomId).emit('playerClickStart', {
+          roomState: roomState[data.roomId]['player']
+        })
+        return
+      }
     }
+    // {
+    //   console.log('hello')
+    //   client.emit('waitingOnPlayer')
+    //   io.to(data.roomId).emit('playerClickStart', {
+    //     roomState: roomState[data.roomId]['player']
+    //   })
+    //   return
+    // }
+
+    // if (
+    //   clientNumber !== Object.keys(roomState[data.roomId]['submitCount']).length
+    // ) {
+    //   client.emit('waitingOnPlayer')
+    //   io.to(data.roomId).emit('playerClickStart', {
+    //     roomState: roomState[data.roomId]['player']
+    //   })
+    //   return
+    // }
 
     //emit ready to all player
     io.to(data.roomId).to(client.id).emit('ready')
@@ -149,8 +168,6 @@ io.on('connection', async (client) => {
     for (let i = 0; i < 5; i++) deck.shuffle()
 
     const hands = deck.deal_hand()
-
-    const playerKeys = Object.keys(roomState[data.roomId]['player'])
 
     //set start game back to false
     playerKeys.forEach((clientId) => {
@@ -195,16 +212,26 @@ io.on('connection', async (client) => {
       //check for auto win
 
       //If not all user submit hand. tell user to wait.
-      if (
-        Object.keys(roomState[data.roomId]['submitCount']).length !==
-        clientNumber
-      ) {
-        client.emit('waiting')
-        io.to(data.roomId).emit('playerSubmitHand', {
-          roomState: roomState[data.roomId]['player']
-        })
-        return
+      for (let i = 0; i < playerKeys.length; i++) {
+        if (!roomState[data.roomId]['player'][playerKeys[i]].startGame) {
+          client.emit('waiting')
+          io.to(data.roomId).emit('playerSubmitHand', {
+            roomState: roomState[data.roomId]['player']
+          })
+          return
+        }
       }
+
+      // if (
+      //   Object.keys(roomState[data.roomId]['submitCount']).length !==
+      //   clientNumber
+      // ) {
+      //   client.emit('waiting')
+      //   io.to(data.roomId).emit('playerSubmitHand', {
+      //     roomState: roomState[data.roomId]['player']
+      //   })
+      //   return
+      // }
 
       //reset Start Game
       playerKeys.forEach((key) => {
@@ -252,9 +279,15 @@ io.on('connection', async (client) => {
     client.leave(data.roomId)
     const room = await io.in(data.roomId).fetchSockets()
     const playersInRoom = room.length
-    delete roomState[data.roomId]['player'][client.id]
+    if (playersInRoom > 0 && roomState[data.roomId]['player'][client.id]) {
+      delete roomState[data.roomId]['player'][client.id]
+      const playerKeys = Object.keys(roomState[data.roomId]['player'])
+      playerKeys.forEach(
+        (player) => (roomState[data.roomId]['player'][player].startGame = false)
+      )
+    }
 
-    if (roomState[data.roomId]['player']) {
+    if (playersInRoom > 0 && roomState[data.roomId]['player']) {
       io.to(data.roomId).emit('playerLeft', {
         playerName: data.playerName,
         playersInRoom,
@@ -262,9 +295,7 @@ io.on('connection', async (client) => {
       })
     }
 
-    if (!data.waiting) {
-      client.on('playStillQualify', handlePlayQualify)
-    }
+    client.on('playStillQualify', handlePlayQualify)
   }
 
   const handlePlayQualify = async (data) => {
