@@ -253,13 +253,14 @@ io.on('connection', async (client) => {
     const room = await io.in(data.roomId).fetchSockets()
     const playersInRoom = room.length
     delete roomState[data.roomId]['player'][client.id]
-    console.log(roomState[data.roomId]['player'])
 
-    io.to(data.roomId).emit('playerLeft', {
-      playerName: data.playerName,
-      playersInRoom,
-      roomState: roomState[data.roomId]['player']
-    })
+    if (roomState[data.roomId]['player']) {
+      io.to(data.roomId).emit('playerLeft', {
+        playerName: data.playerName,
+        playersInRoom,
+        roomState: roomState[data.roomId]['player']
+      })
+    }
 
     if (!data.waiting) {
       client.on('playStillQualify', handlePlayQualify)
