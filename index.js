@@ -222,17 +222,6 @@ io.on('connection', async (client) => {
         }
       }
 
-      // if (
-      //   Object.keys(roomState[data.roomId]['submitCount']).length !==
-      //   clientNumber
-      // ) {
-      //   client.emit('waiting')
-      //   io.to(data.roomId).emit('playerSubmitHand', {
-      //     roomState: roomState[data.roomId]['player']
-      //   })
-      //   return
-      // }
-
       //reset Start Game
       playerKeys.forEach((key) => {
         roomState[data.roomId]['player'][key].startGame = false
