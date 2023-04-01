@@ -113,7 +113,7 @@ io.on('connection', async (client) => {
   }
 
   const handleDealHand = async (data) => {
-    if (!roomState[data.roomId]) {
+    if (!roomState[data.roomId]['player'][client.id]) {
       client.emit('roomClosed')
       return
     }
