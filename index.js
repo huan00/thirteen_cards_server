@@ -302,12 +302,24 @@ io.on('connection', async (client) => {
     roomState[data.roomId]['playing'] = false
   }
 
+  const handleSendMessage = async (data) => {
+    const roomSockets = await io.in(data.roomId).fetchSockets()
+    if (roomSockets) {
+      console.log(data.roomId)
+      io.to(data.roomId).emit('recievedMessage', {
+        messageSender: data.playerName,
+        message: data.message
+      })
+    }
+  }
+
   client.on('createRoom', handleCreateRoom)
   client.on('joinRoom', handleJoinRoom)
   client.on('startGame', handleDealHand)
   client.on('resetGame', handleResetGame)
   client.on('leaveRoom', handleLeaveRoom)
   client.on('submitHand', handleSubmitHand)
+  client.on('sendMessage', handleSendMessage)
 })
 
 server.listen(PORT, () => {
