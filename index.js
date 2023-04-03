@@ -305,7 +305,6 @@ io.on('connection', async (client) => {
   const handleSendMessage = async (data) => {
     const roomSockets = await io.in(data.roomId).fetchSockets()
     if (roomSockets) {
-      console.log(data.roomId)
       io.to(data.roomId).emit('recievedMessage', {
         messageSender: data.playerName,
         message: data.message
