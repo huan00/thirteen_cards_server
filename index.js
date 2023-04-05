@@ -299,7 +299,9 @@ io.on('connection', async (client) => {
   }
 
   const handleResetGame = (data) => {
-    roomState[data.roomId]['playing'] = false
+    if (roomState[data.roomId]) {
+      roomState[data.roomId]['playing'] = false
+    }
   }
 
   const handleSendMessage = async (data) => {
