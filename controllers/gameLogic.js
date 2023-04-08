@@ -74,17 +74,21 @@ const threeFlush = (hand) => {
 
   return true
 }
+
 const sixPair = (hand) => {
+  let pairCounter = 0
   const pairs = cardLayout(hand.flat())
-  if (pairs.length !== 7) return false
 
-  const values = new Set(
-    pairs.map((pair) => {
-      return Object.values(pair)[0]
-    })
-  )
+  // if (pairs.length !== 7) return false
+  const values = pairs.map((pair) => Object.values(pair)[0])
 
-  if (values.size !== 2) return false
+  values.forEach((value) => {
+    if (value === 2 || value === 3) {
+      pairCounter++
+    }
+  })
+
+  if (pairCounter !== 6) return false
 
   return true
 }
@@ -557,25 +561,25 @@ const hand1 = {
       },
       {
         suit: 0,
+        rank: 1
+      },
+      {
+        suit: 0,
+        rank: 1
+      }
+    ],
+    [
+      {
+        suit: 1,
         rank: 2
       },
       {
         suit: 0,
-        rank: 11
-      }
-    ],
-    [
-      {
-        suit: 1,
-        rank: 1
-      },
-      {
-        suit: 0,
-        rank: 1
+        rank: 2
       },
       {
         suit: 3,
-        rank: 1
+        rank: 9
       },
       {
         suit: 1,
@@ -583,25 +587,25 @@ const hand1 = {
       },
       {
         suit: 3,
-        rank: 4
+        rank: 12
       }
     ],
     [
       {
         suit: 1,
-        rank: 9
-      },
-      {
-        suit: 2,
-        rank: 9
-      },
-      {
-        suit: 2,
-        rank: 9
+        rank: 10
       },
       {
         suit: 2,
         rank: 10
+      },
+      {
+        suit: 2,
+        rank: 12
+      },
+      {
+        suit: 2,
+        rank: 7
       },
       {
         suit: 2,
@@ -726,7 +730,7 @@ const hand4 = {
 
 // console.log(Object.values(cardLayout(hand1.hand[0])[0]))
 
-// console.log(sixPair(hand1.hand.flat()))
+console.log(sixPair(hand1.hand.flat()))
 // console.log(hand1.hand)
 
 // console.log(checkAuto(hand3.hand))
