@@ -78,8 +78,6 @@ const threeFlush = (hand) => {
 const sixPair = (hand) => {
   let pairCounter = 0
   const pairs = cardLayout(hand.flat())
-
-  // if (pairs.length !== 7) return false
   const values = pairs.map((pair) => Object.values(pair)[0])
 
   values.forEach((value) => {
