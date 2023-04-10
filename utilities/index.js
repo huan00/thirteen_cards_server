@@ -9,3 +9,11 @@ export const createId = () => {
 }
 
 // export default createId
+
+export const sortScoreboard = (scoreboard) => {
+  const sorted = Object.fromEntries(
+    Object.entries(scoreboard).sort(([, a], [, b]) => b - a)
+  )
+
+  return sorted
+}

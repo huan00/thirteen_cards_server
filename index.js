@@ -3,7 +3,7 @@ import cors from 'cors'
 import * as http from 'http'
 import { Server } from 'socket.io'
 import Deck from './controllers/Deck.js'
-import { createId } from './utilities/index.js'
+import { createId, sortScoreboard } from './utilities/index.js'
 import {
   compareHands,
   checkUserHand,
@@ -59,6 +59,7 @@ io.on('connection', async (client) => {
           gong: false
         }
       },
+      scoreBoard: {},
       submitCount: {},
       playing: false
     }
@@ -237,7 +238,21 @@ io.on('connection', async (client) => {
       //reset currentScore for players
       playerKeys.forEach((key) => {
         roomState[data.roomId]['player'][key].startGame = false
+        roomState[data.roomId]['scoreBoard'][
+          roomState[data.roomId]['player'][key].name
+        ] = roomState[data.roomId]['player'][key].totalScore
       })
+
+      // sort scoreboard
+      const sortedScoreboard = sortScoreboard(
+        roomState[data.roomId]['scoreBoard']
+      )
+      roomState[data.roomId]['scoreBoard'] = sortedScoreboard
+
+      io.to(data.roomId).emit(
+        'scoreBoard',
+        roomState[data.roomId]['scoreBoard']
+      )
 
       hands.splice(0, hands.length)
       roomState[data.roomId]['submitCount'] = {}
