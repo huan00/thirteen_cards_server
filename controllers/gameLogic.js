@@ -474,9 +474,9 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
       }
     }
   }
-  // const result = gongChecker(scoreBoard)
-  // return result
-  return scoreBoard
+  const result = gongChecker(scoreBoard)
+  return result
+  // return scoreBoard
 }
 
 export const checkUserHand = (keys, roomState) => {
