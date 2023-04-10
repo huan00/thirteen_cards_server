@@ -446,9 +446,6 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
         const h1 = handRank(compareHand[k])
         const h2 = handRank(compareTo[k])
 
-        console.log(h1)
-        console.log(h2)
-
         const score = scoreSystem(Math.max(h1, h2), k)
         if (h1 > h2) {
           scoreBoard[i][Object.keys(scoreBoard[i])].score += score
@@ -462,7 +459,6 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
           scoreBoard[j][Object.keys(scoreBoard[j])].gongTracker += 1
         } else if (h1 === h2) {
           const tie = handleTie(compareHand[k], compareTo[k], h1)
-          console.log('tie ' + tie)
           if (tie === 1) {
             scoreBoard[i][Object.keys(scoreBoard[i])].score += score
             scoreBoard[i][Object.keys(scoreBoard[i])].gongTracker += 1
@@ -649,8 +645,8 @@ const hand4 = {
   ]
 }
 
-const result = compareHands(hand1, hand2)
-console.log(result)
+// const result = compareHands(hand1, hand2)
+// console.log(result)
 // const all = [hand1, hand2, hand3, hand4]
 // console.log(all)
 // console.log(compareHands(hand3, hand4))

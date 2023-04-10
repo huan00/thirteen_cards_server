@@ -265,7 +265,9 @@ io.on('connection', async (client) => {
   const handleLeaveRoom = async (data) => {
     client.leave(data.roomId)
     const room = await io.in(data.roomId).fetchSockets()
-    delete roomState[data.roomId]['player'][client.id]
+    if (roomState[data.roomId]['player'][client.id]) {
+      delete roomState[data.roomId]['player'][client.id]
+    }
     const playersInRoom = room.length
 
     if (playersInRoom > 0 && roomState[data.roomId]['player']) {
