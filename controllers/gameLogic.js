@@ -232,9 +232,6 @@ const checkHighPair = (hand1, hand2) => {
     )
     .sort((a, b) => b - a)
 
-  console.log(set1)
-  console.log(set2)
-
   for (let i = 0; i < set1.length; i++) {
     if (set1[i] > set2[i]) {
       return 1
