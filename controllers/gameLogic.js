@@ -479,6 +479,35 @@ export const compareHands = (hand1, hand2, hand3 = false, hand4 = false) => {
   // return scoreBoard
 }
 
+export const handPoints = (hand) => {
+  let points = 0
+  if (handRank(hand[0]) === 3) {
+    points += 3
+  } else {
+    points += 1
+  }
+
+  if (handRank(hand[1]) === 6) {
+    points += 2
+  } else if (handRank(hand[1]) === 7) {
+    points += 8
+  } else if (handRank(hand[1]) === 8) {
+    points += 10
+  } else {
+    points += 1
+  }
+
+  if (handRank(hand[2]) === 7) {
+    points += 4
+  } else if (handRank(hand[2]) === 8) {
+    points += 5
+  } else {
+    points += 1
+  }
+
+  return points
+}
+
 export const checkUserHand = (keys, roomState) => {
   const hands = []
   const roomStateUpdate = { ...roomState }
@@ -508,14 +537,13 @@ export const checkUserHand = (keys, roomState) => {
       }
     } else {
       const disqualify = key
-      const points = (keys.length - 1) * 3
-      roomStateUpdate[disqualify].currentScore -= points
-      roomStateUpdate[disqualify].totalScore -= points
-
       keys.forEach((playerKey) => {
         if (playerKey !== disqualify) {
-          roomStateUpdate[playerKey].currentScore += 3
-          roomStateUpdate[playerKey].totalScore += 3
+          const points = handPoints(roomStateUpdate[playerKey].hand)
+          roomStateUpdate[playerKey].currentScore += points
+          roomStateUpdate[playerKey].totalScore += points
+          roomStateUpdate[disqualify].currentScore -= points
+          roomStateUpdate[disqualify].totalScore -= points
         }
       })
     }
@@ -629,8 +657,8 @@ const hand4 = {
       { suit: 3, rank: 12 }
     ],
     [
-      { suit: 2, rank: 1 },
-      { suit: 3, rank: 3 },
+      { suit: 2, rank: 8 },
+      { suit: 3, rank: 8 },
       { suit: 2, rank: 8 },
       { suit: 3, rank: 8 },
       { suit: 2, rank: 5 }
@@ -645,6 +673,7 @@ const hand4 = {
   ]
 }
 
+// console.log(handPoints(hand4.hand))
 // const result = compareHands(hand1, hand2)
 // console.log(result)
 // const all = [hand1, hand2, hand3, hand4]
