@@ -59,6 +59,7 @@ io.on('connection', async (client) => {
           gong: false
         }
       },
+      waiting: {},
       scoreBoard: {},
       submitCount: {},
       playing: false
@@ -75,30 +76,39 @@ io.on('connection', async (client) => {
 
   const handleJoinRoom = async (data) => {
     const roomSockets = await io.in(data.roomId).fetchSockets()
-
     let currentRoomPlayer = roomSockets.length
 
     if (currentRoomPlayer === 0) {
       client.emit('unknowRoom')
       return
-    } else if (roomState[data.roomId]['playing']) {
-      client.emit('gameOnPlay')
-      return
     } else if (currentRoomPlayer > 3) {
       client.emit('tooManyPlayers')
       return
-    }
-
-    //set user into roomstate
-    roomState[data.roomId]['player'][client.id] = {
-      name: data.playerName,
-      totalScore: 0,
-      currentScore: 0,
-      clientId: client.id,
-      autoWin: false,
-      startGame: false,
-      hand: [],
-      gong: false
+    } else if (roomState[data.roomId]['playing']) {
+      roomState[data.roomId]['waiting'][client.id] = {
+        name: data.playerName,
+        totalScore: 0,
+        currentScore: 0,
+        clientId: client.id,
+        autoWin: false,
+        startGame: true,
+        hand: [],
+        gong: false
+      }
+      // client.emit('gameOnPlay')
+      // return
+    } else {
+      //set user into roomstate
+      roomState[data.roomId]['player'][client.id] = {
+        name: data.playerName,
+        totalScore: 0,
+        currentScore: 0,
+        clientId: client.id,
+        autoWin: false,
+        startGame: false,
+        hand: [],
+        gong: false
+      }
     }
 
     client.join(data.roomId)
@@ -120,6 +130,17 @@ io.on('connection', async (client) => {
       client.emit('roomClosed')
       return
     }
+    // move wiating player into room
+    if (roomState[data.roomId]['playing'] === true) return
+    if (Object.keys(roomState[data.roomId]['waiting']).length > 0) {
+      const temp = { ...roomState[data.roomId]['waiting'] }
+      const keys = Object.keys(temp)
+      keys.forEach((key) => {
+        roomState[data.roomId]['player'][key] = temp[key]
+      })
+      roomState[data.roomId]['waiting'] = {}
+    }
+
     //get number of players in room
     const roomSockets = await io.in(data.roomId).fetchSockets()
     const clientNumber = roomSockets.length
@@ -175,7 +196,6 @@ io.on('connection', async (client) => {
   }
 
   const handleSubmitHand = async (data) => {
-    if (!data.hand) return
     try {
       if (!roomState[data.roomId]) {
         client.emit('roomClosed')
@@ -191,8 +211,7 @@ io.on('connection', async (client) => {
       roomState[data.roomId]['player'][client.id]['startGame'] = true
 
       //get player keys from the room
-      const playerKeys = Object.keys(roomState[data.roomId]['player'])
-
+      let playerKeys = Object.keys(roomState[data.roomId]['player'])
       //check for auto win
 
       //If not all user submit hand. tell user to wait.
@@ -202,13 +221,16 @@ io.on('connection', async (client) => {
           io.to(data.roomId).emit('playerSubmitHand', {
             roomState: roomState[data.roomId]['player']
           })
+
           return
         }
       }
 
       //reset Start Game
       playerKeys.forEach((key) => {
-        roomState[data.roomId]['player'][key].startGame = false
+        if ((roomState[data.roomId]['player'][key].waiting = false)) {
+          roomState[data.roomId]['player'][key].startGame = false
+        }
       })
 
       //check if the hand submitted is qualify or not
@@ -238,6 +260,7 @@ io.on('connection', async (client) => {
       //reset currentScore for players
       playerKeys.forEach((key) => {
         roomState[data.roomId]['player'][key].startGame = false
+        roomState[data.roomId]['player'][key].waiting = false
         roomState[data.roomId]['scoreBoard'][
           roomState[data.roomId]['player'][key].name
         ] = roomState[data.roomId]['player'][key].totalScore
@@ -320,6 +343,7 @@ io.on('connection', async (client) => {
   client.on('submitHand', handleSubmitHand)
   client.on('sendMessage', handleSendMessage)
   client.on('getRoomState', (data) => updateRoomState(data.roomId))
+  client.on('checker', handleSubmitHand)
 })
 
 const resetPlayerStart = (roomId) => {
